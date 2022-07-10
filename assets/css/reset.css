@@ -1,0 +1,178 @@
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+
+*,
+*::before,
+*::after {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-indent: 0;
+}
+
+:root {
+  --theme-color: #9898FF;
+  --text-color: #252525;
+  --placeholder-color: #A0A0A0;
+  --border-color: #E0E0E0;
+  --background-color: #FFFFFF;
+  --border-radius: 0px;
+
+  line-height: 1.125;
+  color: var(--text-color);
+  font-size: 1rem;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root,
+input {
+  font-family: "CeraPro", "HarmonyOS Sans SC", sans-serif;
+}
+
+html,
+body {
+  background: var(--background-color);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0.65rem 0;
+}
+
+h1.ul,
+h2.ul,
+h3.ul,
+h4.ul,
+h5.ul,
+h6.ul {
+  padding-bottom: 8px;
+}
+
+h1.ul::after,
+h2.ul::after,
+h3.ul::after,
+h4.ul::after,
+h5.ul::after,
+h6.ul::after {
+  content: "";
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 2px;
+  top: 8px;
+  background: var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+p {
+  margin: 0.65rem 0;
+}
+
+article {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.33em;
+}
+
+article.indent p {
+  text-indent: 2em;
+}
+
+a {
+  display: inline;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+a:link,
+a:visited,
+a:hover {
+  color: var(--text-color);
+}
+
+a:active {
+  color: var(--theme-color);
+}
+
+a[href^="http"]:empty::before {
+  content: "查看链接";
+}
+
+@media screen and (min-width: 768px) {
+  a:active {
+    color: var(--text-color);
+  }
+
+  a:hover {
+    color: var(--theme-color);
+  }
+}
+
+i,
+b {
+  font-weight: normal;
+  font-style: normal;
+}
+
+small {
+  font-size: 0.85rem;
+}
+
+strong {
+  font-weight: bold;
+}
+
+::-webkit-input-placeholder {
+  color: var(--placeholder-color);
+}
+
+::-moz-placeholder {
+  color: var(--placeholder-color);
+}
+
+hr {
+  height: 2px;
+  margin: 0.65rem 0;
+  background: var(--border-color);
+  border: none;
+  border-radius: var(--border-radius);
+}
+
+img {
+  width: 100%;
+  height: auto;
+  margin: 0.65rem 0;
+}
+
+code {
+  font-family: "JetBrainsMono", monospace;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  display: none;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  margin: 0;
+}
+
+input {
+  -moz-appearance: textfield;
+}

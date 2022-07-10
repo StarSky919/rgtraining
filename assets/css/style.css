@@ -1,0 +1,233 @@
+@import "fontawesome.css";
+@import "reset.css";
+
+/*----------------*/
+
+noscript {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  z-index: 999;
+}
+
+noscript p {
+  max-width: 75vw;
+}
+
+.hidden {
+  display: none !important;
+}
+
+main,
+#outer_container  {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+main {
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+#outer_container {
+  margin: 0.65rem 0;
+}
+
+#container {
+  --padding: 0.6rem;
+  --margin: var(--padding);
+  --font-size: 1rem;
+  --background: rgba(0, 0, 0, 0.5);
+
+  position: relative;
+  background: #252525;
+  font-size: var(--font-size);
+}
+
+.dialog {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  position: absolute;
+  padding: var(--padding) 0;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  min-height: 25%;
+  background: var(--background);
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  -ms-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%);
+  font-size: 0.9em;
+}
+
+#change_speed {
+  font-size: var(--font-size);
+  z-index: 999;
+}
+
+#change_speed .box_1 {
+  margin: var(--padding) 0;
+}
+
+#change_speed .box_2>* {
+  margin: 0 var(--padding);
+}
+
+#speed_rate {
+  display: inline-block;
+  margin: 0 var(--padding);
+  padding: 2px 4px;
+  color: white;
+  text-align: center;
+}
+
+#container i::before {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+}
+
+#container>*:not(canvas) {
+  position: absolute;
+  color: white;
+  text-align: center;
+}
+
+#play {
+  top: var(--padding);
+  left: var(--margin);
+  z-index: 999;
+}
+
+#play.playing {
+  text-shadow: black 0 0 8px;
+}
+
+#top_control,
+#bottom_control {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  padding: var(--padding) var(--margin);
+  width: 100%;
+  background: var(--background);
+}
+
+#top_control {
+  top: 0;
+}
+
+#bottom_control {
+  bottom: 0;
+}
+
+#play_2 {
+  opacity: 0;
+}
+
+#file {
+  display: none;
+}
+
+#time,
+#progress {
+  width: 60%;
+  font-size: 0.9em;
+}
+
+#progress {
+  background: transparent;
+  outline: none;
+}
+
+#progress::-webkit-slider-runnable-track {
+  height: var(--padding);
+  background: #999999;
+  border-radius: 50px;
+}
+
+#progress::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: calc(var(--padding) * 1.5);
+  width: calc(var(--padding) * 1.5);
+  margin-top: calc(0rem - var(--padding) / 4);
+  background: white;
+  border-radius: 50px;
+  -webkit-transition: background 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out;
+}
+
+#progress::-moz-range-track {
+  height: var(--padding);
+  background: #999999;
+  border-radius: 50px;
+}
+
+#progress::-moz-range-thumb {
+  -moz-appearance: none;
+  appearance: none;
+  height: calc(var(--padding) * 1.5);
+  width: calc(var(--padding) * 1.5);
+  margin-top: calc(0rem - var(--padding) / 4);
+  background: white;
+  border-radius: 50px;
+  -moz-transition: background 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out;
+}
+
+#progress:disabled {
+  opacity: 0.75;
+}
+
+#progres:not(:disabled):hover::-webkit-slider-thumb {
+  background: #9898FF;
+}
+
+#canvas {
+  vertical-align: bottom;
+}
