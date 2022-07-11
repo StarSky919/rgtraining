@@ -18,13 +18,14 @@
   </noscript>
   <main>
     <h2>音乐游戏培训</h2>
-    <p>目前版本：v1.1.0</p>
+    <p>目前版本：v1.2.0</p>
     <p id="message">选择一个视频文件以开始</p>
     <div id="outer_container">
       <div id="container">
         <div class="always" id="play"><i class="fas fa-play" id="play_1"></i></div>
-        <div class="always" id="speed"><i class="fas fa-tachometer-alt"></i></div>
+        <div class="always transformed" id="speed"><i class="fas fa-tachometer-alt"></i></div>
         <div class="always" id="fullscreen"><i class="fas fa-expand" id="fullscreen_1"></i></div>
+        <div id="looper"><i class="fas fa-sync-alt"></i></div>
         <div id="top_control">
           <div class="invisible"><i class="fas fa-play"></i></div>
           <div id="mute"><i class="fas fa-volume-up" id="mute_1"></i></div>
@@ -33,12 +34,12 @@
           <label for="video_file" id="upload"><i class="fas fa-file" id="upload_1"></i></label>
           <div class="invisible"><i class="fas fa-expand"></i></div>
         </div>
-        <div id="dialog" class="dialog hidden"></div>
-        <div id="video_ended" class="dialog hidden">
+        <div id="dialog" class="dialog always hidden"></div>
+        <div id="video_ended" class="dialog always hidden">
           <div>视频已播放完毕</div>
-          <div id="replay"><i class="fas fa-redo"></i></div>
+          <div id="replay"><i class="fas fa-undo"></i></div>
         </div>
-        <div id="change_speed" class="dialog hidden">
+        <div id="change_speed" class="dialog always hidden">
           <div>设置倍速</div>
           <div class="box_1">
             <span id="sub_1"><i class="fas fa-angle-double-left"></i></span>
@@ -48,8 +49,19 @@
             <span id="add_1"><i class="fas fa-angle-double-right"></i></span>
           </div>
           <div class="box_2">
-            <span id="reset"><i class="fas fa-redo"></i></span>
-            <span id="close"><i class="fas fa-times"></i></span>
+            <span id="speed_rate_reset"><i class="fas fa-undo"></i></span>
+            <span id="speed_rate_close"><i class="fas fa-times"></i></span>
+          </div>
+        </div>
+        <div id="select_loop" class="dialog always hidden">
+          <div>选段循环</div>
+          <div class="box_1" id="select_loop_box">
+            <span id="loop_start" class="selected">00:00.000</span> ~ <span id="loop_end">00:00.000</span>
+          </div>
+          <div class="box_2">
+            <span id="loop_add"><i class="fas fa-plus"></i></span>
+            <span id="loop_reset"><i class="fas fa-undo"></i></span>
+            <span id="loop_close"><i class="fas fa-times"></i></span>
           </div>
         </div>
         <div id="bottom_control">
@@ -70,9 +82,13 @@
       <span class="button" id="clear_hitsound">清除</span>
     </p>
     <p>
+      倍速调整步长：<span id="speed_step"></span>x
+      <input type="range" class="range" id="speed_step_input" value="1" max="3">
+    </p>
+    <p>
       <i class="fas fa-question-circle" id="help_ui_offset"></i>
-      UI边界偏移：<span id="offset_value"></span>%
-      <input type="range" id="ui_offset" value="100" max="100">
+      UI边界偏移：<span id="ui_offset"></span>%
+      <input type="range" class="range" id="ui_offset_input" value="100" max="100">
     </p>
     <p>RGTraining © 2022 StarSky919</p>
   </main>

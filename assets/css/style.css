@@ -76,8 +76,13 @@ main>* {
   margin: 0.65rem 0;
 }
 
+#outer_container.fullscreen {
+  width: 100vw;
+  background: #fff
+}
+
 #container {
-  --padding: 0.6rem;
+  --padding: 0.6em;
   --margin: var(--padding);
   --font-size: 1rem;
   --background: rgba(0, 0, 0, 0.65);
@@ -114,6 +119,14 @@ main>* {
   font-size: 0.9em;
 }
 
+.box_1 {
+  margin: var(--padding) 0;
+}
+
+.box_2>* {
+  margin: 0 var(--padding);
+}
+
 #replay {
   margin-top: calc(var(--padding) * 1.25);
   font-size: 1.25em;
@@ -122,14 +135,6 @@ main>* {
 #change_speed {
   font-size: var(--font-size);
   z-index: 999;
-}
-
-#change_speed .box_1 {
-  margin: var(--padding) 0;
-}
-
-#change_speed .box_2>* {
-  margin: 0 var(--padding);
 }
 
 #speed_rate {
@@ -158,31 +163,51 @@ main>* {
   text-align: center;
 }
 
-#play {
-  top: var(--padding);
-  left: var(--margin);
-  z-index: 999;
-}
-
+#play,
 #fullscreen {
   top: var(--padding);
-  right: var(--margin);
-  z-index: 999;
 }
 
-#container.playing #play,
+#play {
+  left: var(--margin);
+  z-index: 998;
+}
+
+#fullscreen,
+#looper {
+  right: var(--margin);
+  z-index: 998;
+}
+
+#looper {
+  top: 50%;
+  transition: transform 0.2s;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  text-shadow: rgba(0, 0, 0, 0.75) 0 0 8px;
+}
+
+#container.playing #play {
+  text-shadow: rgba(0, 0, 0, 0.5) 0 0 8px;
+}
+
 #container.playing #fullscreen {
   text-shadow: rgba(0, 0, 0, 0.75) 0 0 8px;
 }
 
 #speed {
-  top: 50%;
-  left: var(--margin);
-  text-shadow: black 0 0 8px;
+  transition: transform 0.2s ease;
+  text-shadow: rgba(0, 0, 0, 0.5) 0 0 8px;
+  z-index: 999;
+}
+
+#speed.transformed {
+  top: 50% !important;
+  left: var(--margin) !important;
   -webkit-transform: translateY(-50%);
   -ms-transform: translateY(-50%);
   transform: translateY(-50%);
-  z-index: 999;
 }
 
 #top_control,
@@ -238,8 +263,8 @@ main>* {
   margin-top: calc(0rem - var(--padding) / 4);
   background: var(--background-color);
   border-radius: 50px;
-  -webkit-transition: background 0.2s ease-in-out;
-  transition: background 0.2s ease-in-out;
+  -webkit-transition: background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 #progress::-moz-range-track {
@@ -255,8 +280,8 @@ main>* {
   margin-top: calc(0rem - var(--padding) / 4);
   background: var(--background-color);
   border-radius: 50px;
-  -moz-transition: background 0.2s ease-in-out;
-  transition: background 0.2s ease-in-out;
+  -moz-transition: background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 #progress:disabled {
@@ -303,20 +328,20 @@ input[type=text]:focus {
   border: 1px solid var(--theme-color);
 }
 
-#ui_offset {
+.range {
   --length: 0.75rem;
 
   background: transparent;
   outline: none;
 }
 
-#ui_offset::-webkit-slider-runnable-track {
+.range::-webkit-slider-runnable-track {
   height: var(--length);
   background: #999999;
   border-radius: 50px;
 }
 
-#ui_offset::-webkit-slider-thumb {
+.range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: calc(var(--length) * 1.5);
@@ -325,17 +350,17 @@ input[type=text]:focus {
   background: var(--background-color);
   border: 1px solid var(--border-color);
   border-radius: 50px;
-  -webkit-transition: background 0.2s ease-in-out;
-  transition: background 0.2s ease-in-out;
+  -webkit-transition: background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
-#ui_offset::-moz-range-track {
+.range::-moz-range-track {
   height: var(--length);
   background: #999999;
   border-radius: 50px;
 }
 
-#ui_offset::-moz-range-thumb {
+.range::-moz-range-thumb {
   -moz-appearance: none;
   appearance: none;
   width: calc(var(--length) * 1.5);
@@ -344,14 +369,14 @@ input[type=text]:focus {
   background: var(--background-color);
   border: 1px solid var(--border-color);
   border-radius: 50px;
-  -moz-transition: border-color 0.2s ease-in-out;
-  transition: border-color 0.2s ease-in-out;
+  -moz-transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
-#ui_offset:disabled {
+.range:disabled {
   opacity: 0.75;
 }
 
-#ui_offset:not(:disabled):hover::-webkit-slider-thumb {
+.range:not(:disabled):hover::-webkit-slider-thumb {
   border-color: var(--theme-color);
 }

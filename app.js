@@ -29,7 +29,7 @@ Node.prototype.hasClass = function(cls) {
 Node.prototype.addClass = function(cls) {
   if (Array.isArray(cls)) {
     for (let i in cls) {
-      if (this.hasClass(cls[i])) { return this; }
+      if (this.hasClass(cls[i])) { continue; }
       this.classList.add(cls[i]);
     }
     return this;
@@ -41,7 +41,7 @@ Node.prototype.addClass = function(cls) {
 Node.prototype.removeClass = function(cls) {
   if (Array.isArray(cls)) {
     for (let i in cls) {
-      if (!this.hasClass(cls[i])) { return this; }
+      if (!this.hasClass(cls[i])) { continue; }
       this.classList.remove(cls[i]);
     }
     return this;
@@ -100,6 +100,10 @@ NodeList.prototype.exec = function(callback) {
 
 const createElement = tag => document.createElement(tag);
 
+const getScrollTop = function() {
+  return document.body.scrollTop || document.documentElement.scrollTop || window.pageYOffset;
+}
+
 const cookie = {
   set: function(name, value, days) {
     const date = new Date();
@@ -127,30 +131,10 @@ const cookie = {
   }
 }
 
-const debounce = function(callback, delay) {
-  let timeout;
-  return function() {
-    clearTimeout(timeout);
-    const [that, args] = [this, arguments];
-    timeout = setTimeout(function() {
-      callback.apply(that, args);
-      clearTimeout(timeout);
-      timeout = null;
-    }, delay);
-  }
-}
-
-const throttle = function(callback, delay) {
-  let timer;
-  return function() {
-    if (timer) { return; }
-    const [that, args] = [this, arguments];
-    timer = setTimeout(function() {
-      clearTimeout(timer);
-      timer = null;
-      callback.apply(that, args);
-    }, delay);
-  }
+const formatTime = time => {
+  const minute = Math.floor(time / 60).toString();
+  const second = (time % 60).toFixed(3);
+  return `${minute.padStart(2, '0')}:${second.padStart(6, '0')}`
 }
 
 /*----------------*/
@@ -180,6 +164,10 @@ const changeSpeed = $('#change_speed');
 const videoEnded = $('#video_ended');
 const fullscreen = $('#fullscreen');
 const fullscreen_1 = $('#fullscreen_1');
+const looper = $('#looper');
+const selectLoop = $('#select_loop');
+const loopStart = $('#loop_start');
+const loopEnd = $('#loop_end');
 const progress = $('#progress');
 const dialog = $('#dialog');
 
@@ -192,14 +180,25 @@ const audioContext = new window.AudioContext();
 let audioBuffer;
 let audioSource;
 
+let isPlaying = false;
+let isEnded = true;
+
+const loop = {
+  start: 0,
+  end: 0
+};
+
 /*----------------*/
 
 const hitsound = $('#hitsound');
 const selectHitsound = $('#select_hitsound');
 const clearHitsound = $('#clear_hitsound');
-const uiOffset = $('#ui_offset');
+const speedStep = $('#speed_step_input');
+const uiOffset = $('#ui_offset_input');
 
+const speedStepMap = [0.01, 0.05, 0.1, 0.2];
 const settings = {
+  speedStep: 0.1,
   uiOffset: parseInt(cookie.get('ui_offset')) || uiOffset.value
 }
 
@@ -210,7 +209,7 @@ const closeDialog = (() => {
   return delay => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
-      dialog.innerHTML = '';
+      dialog.innerText = '';
       dialog.addClass('hidden');
       clearTimeout(timeout);
       timeout = null;
@@ -219,51 +218,49 @@ const closeDialog = (() => {
 })();
 
 const showText = (str, delay = 1.5) => {
-  dialog.innerHTML = str;
+  dialog.innerText = str;
   dialog.removeClass('hidden');
   closeDialog(delay);
 }
 
 const setIconSize = size => {
-  container.style.setProperty('--padding', size + 'rem');
-  container.style.setProperty('--font-size', size * 1.67 + 'rem');
+  container.style.setProperty('--padding', size * 0.85 + 'em');
+  container.style.setProperty('--font-size', size * 1.65 + 'rem');
 }
 
-let isPlaying = false;
-let isEnded = true;
 const preparePlaying = () => {
-  $('#container>*:not(.always, .dialog)')
-    .exec(function() { this.removeClass('hidden') });
+  $('#container:not(.setting_loop)>*:not(.always)')
+    ?.exec(function() { this.removeClass('hidden') });
   container.removeClass('playing');
   play_1.addClass('fa-play');
   play_1.removeClass('fa-pause');
-  play_1.removeClass('fa-redo');
+  play_1.removeClass('fa-undo');
   isPlaying = false;
   isEnded = false;
 }
 const startedPlaying = () => {
-  $('#container>*:not(.always, .dialog)')
-    .exec(function() { this.addClass('hidden') });
+  $('#container:not(.setting_loop)>*:not(.always)')
+    ?.exec(function() { this.addClass('hidden') });
   container.addClass('playing');
   play_1.addClass('fa-pause');
   play_1.removeClass('fa-play');
-  play_1.removeClass('fa-redo');
+  play_1.removeClass('fa-undo');
   isPlaying = true;
   isEnded = false;
 }
 const stoppedPlaying = () => {
-  $('#container>*:not(.always, .dialog)')
-    .exec(function() { this.removeClass('hidden') });
+  $('#container:not(.setting_loop)>*:not(.always)')
+    ?.exec(function() { this.removeClass('hidden') });
   container.removeClass('playing');
   play_1.addClass('fa-play');
   play_1.removeClass('fa-pause');
   isPlaying = false;
 }
 const endedPlaying = () => {
-  $('#container>*:not(.always, .dialog)')
-    .exec(function() { this.removeClass('hidden') });
+  $('#container:not(.setting_loop)>*:not(.always)')
+    ?.exec(function() { this.removeClass('hidden') });
   container.removeClass('playing');
-  play_1.addClass('fa-redo');
+  play_1.addClass('fa-undo');
   play_1.removeClass('fa-pause');
   isPlaying = false;
   isEnded = true;
@@ -294,6 +291,29 @@ const captureFrame = () => {
   if (!isPlaying) return;
   drawFrame();
   requestAnimationFrame(captureFrame);
+}
+
+const judgePos = (x, y) => {
+  const sWidth = speed.offsetWidth;
+  const sHeight = speed.offsetHeight;
+  const sLeft = speed.offsetLeft;
+  const sTop = speed.offsetTop;
+  const cWidth = Math.min(outerContainer.offsetWidth, container.offsetWidth);
+  const cHeight = Math.min(outerContainer.offsetHeight, container.offsetWidth);
+  const cLeft = container.offsetLeft;
+  const cTop = container.offsetTop;
+  let left, top;
+  if (x && y) {
+    y = y + getScrollTop();
+    left = x < cLeft ? 0 : (x + sWidth > cLeft + cWidth ? cWidth - sWidth : x - cLeft);
+    top = y < cTop ? 0 : (y + sHeight > cTop + cHeight ? cHeight - sHeight : y - cTop);
+    speed.removeClass('transformed');
+  } else if (!speed.hasClass('transformed')) {
+    left = sLeft - cLeft + sWidth > cWidth ? cWidth - sWidth : sLeft;
+    top = sTop + sHeight > cHeight ? cHeight - sHeight : sTop;
+  }
+  typeof left === 'number' ? speed.style.left = left + 'px' : false;
+  typeof top === 'number' ? speed.style.top = top + 'px' : false;
 }
 
 const resize = () => {
@@ -342,11 +362,12 @@ const resize = () => {
     } else {
       container.style.setProperty('--margin', `var(--padding)`);
     }
-
     canvas.width = vw;
     canvas.height = vh;
     drawFrame();
   }
+
+  judgePos();
 }
 
 const updateTime = (() => {
@@ -354,8 +375,8 @@ const updateTime = (() => {
   let timeout;
   return value => {
     if (video.readyState === 0 || isEnded) return;
-    time = Math.floor((time + value) * 10) / 10;
-    showText(`${time >= 0 ? `+${time}` : time}秒`, 0.5);
+    time += value;
+    current.innerText = `${formatTime(video.currentTime + time)}`;
     clearTimeout(timeout);
     timeout = setTimeout(function() {
       if (video.currentTime + time <= 0) {
@@ -378,10 +399,36 @@ const setSpeedRate = value => {
 }
 
 const addSpeedRate = value => {
-  speedRate.innerText = (speedRate.innerText * 10 + value * 10) / 10;
+  speedRate.innerText = Math.floor(speedRate.innerText * 100 + value * 100) / 100;
   if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
   if (speedRate.innerText > 2) speedRate.innerText = 2;
   setSpeedRate(speedRate.innerText);
+}
+
+const setLoop = time => {
+  if (video.readyState === 0) return;
+  loopStart.innerText = formatTime(loop.start = Math.min(time, loop.end));
+  loopEnd.innerText = formatTime(loop.end = Math.max(time, loop.end));
+}
+
+const resetLoop = () => {
+  loop.start = loop.end = 0;
+  loopStart.innerText = loopEnd.innerText = '00:00.000';
+}
+
+const stopSelectLoop = () => {
+  container.removeClass('setting_loop');
+  selectLoop.addClass('hidden');
+  isPlaying ? startedPlaying() : stoppedPlaying();
+}
+
+const toggleSelectLoop = () => {
+  if (selectLoop.hasClass('hidden')) {
+    container.addClass('setting_loop');
+    selectLoop.removeClass('hidden');
+  } else {
+    stopSelectLoop();
+  }
 }
 
 const decodeSound = arrayBuffer =>
@@ -427,16 +474,26 @@ clearHitsound.addEventListener('click', event => {
   selectHitsound.innerText = '选择';
 });
 
+const setSpeedStep = value => {
+  value = (isNaN(+value) || !value) ? 1 : +value;
+  const step = speedStepMap[value];
+  settings.speedStep = $('#speed_step').innerText = step;
+  cookie.set('speed_step', speedStep.value = value);
+}
+
 const setOffset = value => {
   const offset = (isNaN(+value) || !value) ? 100 : +value;
-  uiOffset.value = $('#offset_value').innerText = offset;
+  uiOffset.value = $('#ui_offset').innerText = offset;
   cookie.set('ui_offset', settings.uiOffset = offset);
 }
 
+speedStep.addEventListener('input', event => {
+  setSpeedStep(speedStep.value);
+});
+speedStep.addEventListener('change', event => {});
 uiOffset.addEventListener('input', event => {
   setOffset(uiOffset.value);
 });
-
 uiOffset.addEventListener('change', event => {
   resize();
 });
@@ -447,19 +504,19 @@ window.addEventListener("load", resize);
 window.addEventListener("resize", resize);
 document.addEventListener("fullscreenchange", event => {
   if (document.fullscreenElement === null) {
+    outerContainer.removeClass('fullscreen');
     fullscreen_1.addClass('fa-expand');
     fullscreen_1.removeClass('fa-compress');
-    showText('已退出全屏模式');
   } else {
+    outerContainer.addClass('fullscreen');
     fullscreen_1.addClass('fa-compress');
     fullscreen_1.removeClass('fa-expand');
-    showText('已进入全屏模式');
   }
 });
 progress.addEventListener('input', event => {
   const past = video.currentTime;
-  const passed = (progress.value / 100 * video.duration - past).toFixed(3);
-  showText(`${passed >= 0 ? `+${passed}` : passed}秒`, 0.5);
+  const passed = progress.value / 100 * video.duration - past;
+  current.innerText = `${formatTime(past + passed)}`;
 });
 progress.addEventListener('change', event => {
   video.currentTime = progress.value / 100 * video.duration;
@@ -472,6 +529,7 @@ video.addEventListener("resize", resize);
 video.addEventListener('loadstart', event => {
   endedPlaying();
   resize();
+  resetLoop();
   progress.disabled = true;
   current.innerText = '-';
   total.innerText = '-';
@@ -480,10 +538,8 @@ video.addEventListener('loadstart', event => {
 video.addEventListener('loadeddata', event => {
   progress.disabled = false;
   const time = video.duration;
-  const minute = Math.floor(time / 60).toString();
-  const second = (time % 60).toFixed(3);
   current.innerText = '00:00';
-  total.innerText = `${minute.padStart(2, '0')}:${second.padStart(6, '0')}`;
+  total.innerText = formatTime(time);
   video.currentTime = 0;
   addSpeedRate(0);
   preparePlaying();
@@ -495,11 +551,15 @@ video.addEventListener('play', event => {
   videoEnded.addClass('hidden');
 });
 video.addEventListener('timeupdate', event => {
-  const time = video.currentTime;
-  progress.value = Math.floor(100 * (time / video.duration));
-  const minute = Math.floor(time / 60).toString();
-  const second = (time % 60).toFixed(3);
-  current.innerText = `${minute.padStart(2, '0')}:${second.padStart(6, '0')}`;
+  if (loop.start + loop.end > 0 && !container.hasClass('setting_loop')) {
+    if (video.currentTime > loop.end) {
+      video.currentTime = loop.start;
+    } else if (video.currentTime < loop.start) {
+      video.currentTime = loop.end;
+    }
+  }
+  progress.value = Math.floor(100 * (video.currentTime / video.duration));
+  current.innerText = formatTime(video.currentTime);
   drawFrame();
 });
 video.addEventListener('pause', event => {
@@ -526,21 +586,40 @@ mute.addEventListener('click', event => {
     video.volume = 1;
     mute_1.addClass('fa-volume-up');
     mute_1.removeClass('fa-volume-mute');
-    showText('已解除静音');
   } else {
     video.volume = 0;
     mute_1.addClass('fa-volume-mute');
     mute_1.removeClass('fa-volume-up');
-    showText('视频已静音');
   }
 });
 videoFile.addEventListener('click', event => {
   videoFile.value = null;
 });
 videoFile.addEventListener('change', loadFile);
+
 speed.addEventListener('click', event => {
   changeSpeed.toggleClass('hidden');
+  stopSelectLoop();
 });
+
+let longClickTimer;
+speed.addEventListener('touchstart', event => {
+  longClickTimer = setTimeout(() => {
+    speed.addClass('transformed');
+    clearTimeout(longClickTimer);
+    longClickTimer = null;
+  }, 0.5 * 1000);
+});
+speed.addEventListener('touchend', event => {
+  if (longClickTimer) clearTimeout(longClickTimer);
+});
+speed.addEventListener('touchmove', event => {
+  event.preventDefault();
+  clearTimeout(longClickTimer);
+  longClickTimer = null;
+  judgePos(event.touches[0].clientX, event.touches[0].clientY);
+});
+
 fullscreen.addEventListener('click', event => {
   if (document.fullscreenElement === null) {
     outerContainer.requestFullscreen()
@@ -550,6 +629,12 @@ fullscreen.addEventListener('click', event => {
   } else {
     document.exitFullscreen();
   }
+});
+
+looper.addEventListener('click', event => {
+  if (video.readyState === 0) return;
+  toggleSelectLoop();
+  changeSpeed.addClass('hidden');
 });
 
 $('#replay').addEventListener('click', async event => {
@@ -573,20 +658,31 @@ $('#sub_1').addEventListener('click', event => {
   addSpeedRate(-0.5);
 });
 $('#sub').addEventListener('click', event => {
-  addSpeedRate(-0.1);
+  addSpeedRate(settings.speedStep * -1);
 });
 $('#add').addEventListener('click', event => {
-  addSpeedRate(+0.1);
+  addSpeedRate(settings.speedStep * 1);
 });
 $('#add_1').addEventListener('click', event => {
   addSpeedRate(+0.5);
 });
-$('#reset').addEventListener('click', event => {
+
+$('#speed_rate_reset').addEventListener('click', event => {
   speedRate.innerText = '1';
   setSpeedRate(1);
 });
-$('#close').addEventListener('click', event => {
+$('#speed_rate_close').addEventListener('click', event => {
   changeSpeed.addClass('hidden');
+});
+
+$('#loop_add').addEventListener('click', event => {
+  setLoop(video.currentTime);
+});
+$('#loop_reset').addEventListener('click', event => {
+  resetLoop();
+});
+$('#loop_close').addEventListener('click', event => {
+  stopSelectLoop();
 });
 
 /*----------------*/
@@ -597,4 +693,5 @@ $('#help_ui_offset').addEventListener('click', event => {
 
 /*----------------*/
 
+setSpeedStep(cookie.get('speed_step'));
 setOffset(cookie.get('ui_offset'));
