@@ -228,9 +228,18 @@ const setIconSize = size => {
   container.style.setProperty('--font-size', size * 1.65 + 'rem');
 }
 
+const showUI = () => {
+  const nodeList = $('#container:not(.setting_loop)>*:not(.always)');
+  nodeList || nodeList.exec(function() { this.removeClass('hidden') });
+}
+
+const hideUI = () => {
+ const nodeList = $('#container:not(.setting_loop)>*:not(.always)');
+  nodeList || nodeList.exec(function() { this.addClass('hidden') });
+}
+
 const preparePlaying = () => {
-  $('#container:not(.setting_loop)>*:not(.always)')
-    ?.exec(function() { this.removeClass('hidden') });
+  showUI();
   container.removeClass('playing');
   play_1.addClass('fa-play');
   play_1.removeClass('fa-pause');
@@ -239,8 +248,7 @@ const preparePlaying = () => {
   isEnded = false;
 }
 const startedPlaying = () => {
-  $('#container:not(.setting_loop)>*:not(.always)')
-    ?.exec(function() { this.addClass('hidden') });
+  hideUI();
   container.addClass('playing');
   play_1.addClass('fa-pause');
   play_1.removeClass('fa-play');
@@ -249,16 +257,14 @@ const startedPlaying = () => {
   isEnded = false;
 }
 const stoppedPlaying = () => {
-  $('#container:not(.setting_loop)>*:not(.always)')
-    ?.exec(function() { this.removeClass('hidden') });
+  showUI();
   container.removeClass('playing');
   play_1.addClass('fa-play');
   play_1.removeClass('fa-pause');
   isPlaying = false;
 }
 const endedPlaying = () => {
-  $('#container:not(.setting_loop)>*:not(.always)')
-    ?.exec(function() { this.removeClass('hidden') });
+  showUI();
   container.removeClass('playing');
   play_1.addClass('fa-undo');
   play_1.removeClass('fa-pause');
