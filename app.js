@@ -605,7 +605,7 @@ videoFile.addEventListener('change', loadFile);
 
 speed.addEventListener('click', event => {
   changeSpeed.toggleClass('hidden');
-  stopSelectLoop();
+  if (container.hasClass('setting_loop')) stopSelectLoop();
 });
 
 let longClickTimer;
