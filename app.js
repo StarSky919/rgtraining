@@ -155,21 +155,31 @@ const throttle = function(callback, delay) {
 
 /*----------------*/
 
+window.AudioContext =
+  AudioContext ||
+  webkitAudioContext ||
+  mozAudioContext ||
+  msAudioContext;
 window.requestAnimationFrame =
-  webkitRequestAnimationFrame ||
-  requestAnimationFrame;
+  requestAnimationFrame ||
+  webkitRequestAnimationFrame;
+const message = $('#message');
 const container = $('#container');
 const outerContainer = $('#outer_container');
 const play = $('#play');
 const play_1 = $('#play_1');
-const file = $("#file");
+const mute = $('#mute');
+const mute_1 = $('#mute_1');
+const videoFile = $("#video_file");
 const upload = $("#upload");
 const current = $('#current');
 const total = $('#total');
 const speed = $('#speed');
 const speedRate = $('#speed_rate');
 const changeSpeed = $('#change_speed');
+const videoEnded = $('#video_ended');
 const fullscreen = $('#fullscreen');
+const fullscreen_1 = $('#fullscreen_1');
 const progress = $('#progress');
 const dialog = $('#dialog');
 
@@ -178,17 +188,40 @@ const ctx = canvas.getContext('2d');
 
 const video = createElement('video');
 
+const audioContext = new window.AudioContext();
+let audioBuffer;
+let audioSource;
+
 /*----------------*/
 
-const closeDialog = debounce(() => {
-  dialog.innerHTML = '';
-  dialog.addClass('hidden');
-}, 1.5 * 1000);
+const hitsound = $('#hitsound');
+const selectHitsound = $('#select_hitsound');
+const clearHitsound = $('#clear_hitsound');
+const uiOffset = $('#ui_offset');
 
-const showText = str => {
+const settings = {
+  uiOffset: parseInt(cookie.get('ui_offset')) || uiOffset.value
+}
+
+/*----------------*/
+
+const closeDialog = (() => {
+  let timeout;
+  return delay => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      dialog.innerHTML = '';
+      dialog.addClass('hidden');
+      clearTimeout(timeout);
+      timeout = null;
+    }, delay * 1000);
+  }
+})();
+
+const showText = (str, delay = 1.5) => {
   dialog.innerHTML = str;
   dialog.removeClass('hidden');
-  closeDialog();
+  closeDialog(delay);
 }
 
 const setIconSize = size => {
@@ -197,25 +230,52 @@ const setIconSize = size => {
 }
 
 let isPlaying = false;
+let isEnded = true;
+const preparePlaying = () => {
+  $('#container>*:not(.always, .dialog)')
+    .exec(function() { this.removeClass('hidden') });
+  container.removeClass('playing');
+  play_1.addClass('fa-play');
+  play_1.removeClass('fa-pause');
+  play_1.removeClass('fa-redo');
+  isPlaying = false;
+  isEnded = false;
+}
 const startedPlaying = () => {
-  $('#container>*:not(#play, .dialog, #canvas)')
+  $('#container>*:not(.always, .dialog)')
     .exec(function() { this.addClass('hidden') });
-  play.addClass('playing');
+  container.addClass('playing');
   play_1.addClass('fa-pause');
   play_1.removeClass('fa-play');
+  play_1.removeClass('fa-redo');
   isPlaying = true;
+  isEnded = false;
 }
 const stoppedPlaying = () => {
-  $('#container>*:not(#play, .dialog, #canvas)')
+  $('#container>*:not(.always, .dialog)')
     .exec(function() { this.removeClass('hidden') });
-  play.removeClass('playing');
+  container.removeClass('playing');
   play_1.addClass('fa-play');
   play_1.removeClass('fa-pause');
   isPlaying = false;
 }
+const endedPlaying = () => {
+  $('#container>*:not(.always, .dialog)')
+    .exec(function() { this.removeClass('hidden') });
+  container.removeClass('playing');
+  play_1.addClass('fa-redo');
+  play_1.removeClass('fa-pause');
+  isPlaying = false;
+  isEnded = true;
+}
 
 const loadFile = event => {
   const file = event.target.files[0];
+  if (!file.name.endsWith('.mp4')) {
+    message.innerText = '目前只支持MP4格式的视频';
+    return;
+  }
+  message.innerText = '当前文件：\n' + file.name;
   const reader = new FileReader();
   reader.readAsArrayBuffer(file);
   reader.addEventListener('load', async e => {
@@ -239,31 +299,46 @@ const captureFrame = () => {
 const resize = () => {
   const cw = document.documentElement.clientWidth;
   const ch = document.documentElement.clientHeight;
+  const cAspectRatio = cw / ch;
   const vw = video.videoWidth;
   const vh = video.videoHeight;
+  const vAspectRatio = vw / vh;
   const isLoaded = video.readyState !== 0;
 
-  setIconSize(Math.max(Math.min(0.75, cw / ch)), 0.6);
+  setIconSize(Math.sqrt(cw / 1000));
 
-  if (cw > ch) {
-    const w = ch / (isLoaded ? (vh / vw) : (9 / 16));
-    const h = ch;
-    canvas.width = w * devicePixelRatio;
-    canvas.height = h * devicePixelRatio;
-    canvas.style.width = `${w}px`
-    canvas.style.height = `${h}px`;
-  } else {
-    const w = cw * 0.95;
-    const h = cw / (isLoaded ? (vw / vh) : (16 / 9)) * 0.95;
+  const situation_1 = (ratio = 1) => {
+    const w = cw * ratio;
+    const h = cw / (isLoaded ? (vw / vh) : (16 / 9)) * ratio;
     canvas.width = w * devicePixelRatio;
     canvas.height = h * devicePixelRatio;
     canvas.style.width = `${w}px`
     canvas.style.height = `${h}px`;
   }
 
+  const situation_2 = () => {
+    const w = ch / (isLoaded ? (vh / vw) : (9 / 16));
+    const h = ch;
+    canvas.width = w * devicePixelRatio;
+    canvas.height = h * devicePixelRatio;
+    canvas.style.width = `${w}px`
+    canvas.style.height = `${h}px`;
+  }
+
+  if (cAspectRatio > 1) {
+    if (vAspectRatio > cAspectRatio) {
+      situation_1();
+    } else {
+      situation_2();
+    }
+  } else {
+    situation_1(0.95);
+  }
+
   if (isLoaded) {
-    if (cw > ch && vw / vh > 16 / 9) {
-      container.style.setProperty('--margin', `calc(var(--padding) + (${canvas.style.width} - ${ch / 9 * 16}px) / 2`);
+    if (cw > ch && vAspectRatio > 16 / 9) {
+      container.style.setProperty('--margin',
+        `calc(var(--padding) + (${canvas.style.width} - ${ch / 9 * 16}px) / 2 * ${settings.uiOffset / 100}`);
     } else {
       container.style.setProperty('--margin', `var(--padding)`);
     }
@@ -274,17 +349,28 @@ const resize = () => {
   }
 }
 
-const updateTime = time => {
-  if (video.readyState === 0) return;
-  if (video.currentTime + time <= 0) {
-    video.currentTime = 0;
-  } else if (video.currentTime + time >= video.duration) {
-    video.currentTime = video.duration
-  } else {
-    video.currentTime += time;
-  };
-  showText(`${time >= 0 ? `+${time}` : time}秒`);
-}
+const updateTime = (() => {
+  let time = 0;
+  let timeout;
+  return value => {
+    if (video.readyState === 0 || isEnded) return;
+    time = Math.floor((time + value) * 10) / 10;
+    showText(`${time >= 0 ? `+${time}` : time}秒`, 0.5);
+    clearTimeout(timeout);
+    timeout = setTimeout(function() {
+      if (video.currentTime + time <= 0) {
+        video.currentTime = 0;
+      } else if (video.currentTime + time >= video.duration) {
+        video.currentTime = video.duration
+      } else {
+        video.currentTime += time;
+      }
+      clearTimeout(timeout);
+      time = 0;
+      timeout = null;
+    }, 0.5 * 1000);
+  }
+})();
 
 const setSpeedRate = value => {
   if (video.readyState === 0) return;
@@ -293,10 +379,67 @@ const setSpeedRate = value => {
 
 const addSpeedRate = value => {
   speedRate.innerText = (speedRate.innerText * 10 + value * 10) / 10;
-  if (speedRate.innerText < 0.25) speedRate.innerText = 0.25;
+  if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
   if (speedRate.innerText > 2) speedRate.innerText = 2;
   setSpeedRate(speedRate.innerText);
 }
+
+const decodeSound = arrayBuffer =>
+  new Promise((resolve, reject) => {
+    audioContext.decodeAudioData(arrayBuffer, buffer => {
+      resolve(buffer);
+    }, err => {
+      alert('音频解码失败');
+      reject();
+    });
+  });
+
+const loadHitsound = event => {
+  const file = event.target.files[0];
+  if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
+    alert('只支持MP3、OGG和WAV格式的音频');
+    return;
+  }
+  const reader = new FileReader();
+  reader.readAsArrayBuffer(file);
+  reader.addEventListener('load', async e => {
+    audioBuffer = await decodeSound(e.target.result);
+    selectHitsound.innerText = file.name.length >= 8 ? file.name.slice(0, 5) + '...' : file.name;
+  });
+}
+
+const playHitsound = () => {
+  if (!audioBuffer) return;
+  audioSource = audioContext.createBufferSource();
+  audioSource.buffer = audioBuffer;
+  audioSource.connect(audioContext.destination);
+  audioSource.start(0);
+}
+
+/*----------------*/
+
+hitsound.addEventListener('click', event => {
+  hitsound.value = null;
+});
+hitsound.addEventListener('change', loadHitsound);
+clearHitsound.addEventListener('click', event => {
+  audioBuffer = audioSource = null;
+  selectHitsound.innerText = '选择';
+});
+
+const setOffset = value => {
+  const offset = (isNaN(+value) || !value) ? 100 : +value;
+  uiOffset.value = $('#offset_value').innerText = offset;
+  cookie.set('ui_offset', settings.uiOffset = offset);
+}
+
+uiOffset.addEventListener('input', event => {
+  setOffset(uiOffset.value);
+});
+
+uiOffset.addEventListener('change', event => {
+  resize();
+});
 
 /*----------------*/
 
@@ -304,27 +447,35 @@ window.addEventListener("load", resize);
 window.addEventListener("resize", resize);
 document.addEventListener("fullscreenchange", event => {
   if (document.fullscreenElement === null) {
+    fullscreen_1.addClass('fa-expand');
+    fullscreen_1.removeClass('fa-compress');
     showText('已退出全屏模式');
   } else {
+    fullscreen_1.addClass('fa-compress');
+    fullscreen_1.removeClass('fa-expand');
     showText('已进入全屏模式');
   }
 });
-progress.addEventListener('change', event => {
-  if (progress.disabled === true) return;
+progress.addEventListener('input', event => {
   const past = video.currentTime;
-  video.currentTime = progress.value / 100 * video.duration;
-  const passed = (video.currentTime - past).toFixed(3);
-  showText(`${passed >= 0 ? `+${passed}` : passed}秒`);
+  const passed = (progress.value / 100 * video.duration - past).toFixed(3);
+  showText(`${passed >= 0 ? `+${passed}` : passed}秒`, 0.5);
 });
+progress.addEventListener('change', event => {
+  video.currentTime = progress.value / 100 * video.duration;
+});
+canvas.addEventListener('touchstart', playHitsound);
 canvas.addEventListener('touchmove', event => {
   event.preventDefault();
 });
+video.addEventListener("resize", resize);
 video.addEventListener('loadstart', event => {
-  stoppedPlaying();
+  endedPlaying();
   resize();
   progress.disabled = true;
   current.innerText = '-';
   total.innerText = '-';
+  videoEnded.addClass('hidden');
 });
 video.addEventListener('loadeddata', event => {
   progress.disabled = false;
@@ -334,12 +485,14 @@ video.addEventListener('loadeddata', event => {
   current.innerText = '00:00';
   total.innerText = `${minute.padStart(2, '0')}:${second.padStart(6, '0')}`;
   video.currentTime = 0;
+  addSpeedRate(0);
+  preparePlaying();
 });
-video.addEventListener("resize", resize);
 video.addEventListener('play', event => {
   startedPlaying();
   captureFrame();
   progress.disabled = false;
+  videoEnded.addClass('hidden');
 });
 video.addEventListener('timeupdate', event => {
   const time = video.currentTime;
@@ -353,8 +506,9 @@ video.addEventListener('pause', event => {
   stoppedPlaying();
 });
 video.addEventListener('ended', event => {
-  stoppedPlaying();
+  endedPlaying();
   progress.disabled = true;
+  videoEnded.removeClass('hidden');
 });
 
 /*----------------*/
@@ -366,7 +520,24 @@ play.addEventListener('click', async event => {
   }
   return await video.play();
 });
-file.addEventListener('change', loadFile);
+mute.addEventListener('click', event => {
+  if (video.readyState === 0) return;
+  if (video.volume < 1) {
+    video.volume = 1;
+    mute_1.addClass('fa-volume-up');
+    mute_1.removeClass('fa-volume-mute');
+    showText('已解除静音');
+  } else {
+    video.volume = 0;
+    mute_1.addClass('fa-volume-mute');
+    mute_1.removeClass('fa-volume-up');
+    showText('视频已静音');
+  }
+});
+videoFile.addEventListener('click', event => {
+  videoFile.value = null;
+});
+videoFile.addEventListener('change', loadFile);
 speed.addEventListener('click', event => {
   changeSpeed.toggleClass('hidden');
 });
@@ -379,6 +550,10 @@ fullscreen.addEventListener('click', event => {
   } else {
     document.exitFullscreen();
   }
+});
+
+$('#replay').addEventListener('click', async event => {
+  await video.play();
 });
 
 $('#backward_1').addEventListener('click', event => {
@@ -413,3 +588,13 @@ $('#reset').addEventListener('click', event => {
 $('#close').addEventListener('click', event => {
   changeSpeed.addClass('hidden');
 });
+
+/*----------------*/
+
+$('#help_ui_offset').addEventListener('click', event => {
+  alert('视频宽高比超过16:9时，左右两侧边距占宽度超出16:9部分的百分比。');
+});
+
+/*----------------*/
+
+setOffset(cookie.get('ui_offset'));
