@@ -456,10 +456,12 @@ video.addEventListener('play', event => {
 });
 video.addEventListener('timeupdate', event => {
   if (loop.start + loop.end > 0 && !container.hasClass('setting_loop')) {
-    if (video.currentTime > loop.end) {
-      video.currentTime = loop.start;
-    } else if (video.currentTime < loop.start) {
-      video.currentTime = loop.end;
+    const start = Math.min(loop.start, loop.end);
+    const end = Math.max(loop.start, loop.end);
+    if (video.currentTime > end) {
+      video.currentTime = start;
+    } else if (video.currentTime < start) {
+      video.currentTime = end;
     }
   }
   if (isPlaying) progress.value = Math.floor(1000 * (video.currentTime / video.duration)) || 0;
