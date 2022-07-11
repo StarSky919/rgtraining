@@ -230,12 +230,12 @@ const setIconSize = size => {
 
 const showUI = () => {
   const nodeList = $('#container:not(.setting_loop)>*:not(.always)');
-  nodeList || nodeList.exec(function() { this.removeClass('hidden') });
+  nodeList ? nodeList.exec(function() { this.removeClass('hidden') }) : false;
 }
 
 const hideUI = () => {
- const nodeList = $('#container:not(.setting_loop)>*:not(.always)');
-  nodeList || nodeList.exec(function() { this.addClass('hidden') });
+  const nodeList = $('#container:not(.setting_loop)>*:not(.always)');
+  nodeList ? nodeList.exec(function() { this.addClass('hidden') }) : false;
 }
 
 const preparePlaying = () => {
@@ -422,10 +422,10 @@ const resetLoop = () => {
   loopStart.innerText = loopEnd.innerText = '00:00.000';
 }
 
-const stopSelectLoop = () => {
+const stopSelectLoop = async () => {
   container.removeClass('setting_loop');
   selectLoop.addClass('hidden');
-  isPlaying ? startedPlaying() : stoppedPlaying();
+  isPlaying ? hideUI() : await video.play();
 }
 
 const toggleSelectLoop = () => {
