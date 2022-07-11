@@ -78,7 +78,7 @@ main>* {
 
 #outer_container.fullscreen {
   width: 100vw;
-  background: #fff
+  background: #000000;
 }
 
 #container {
