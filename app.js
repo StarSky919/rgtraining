@@ -1,140 +1,5 @@
-const $ = function(selector) {
-  try {
-    const nodes = document.querySelectorAll(selector);
-    return nodes.length > 1 ? nodes : nodes[0];
-  } catch (e) {
-    return null;
-  }
-};
-
-Node.prototype.$ = function(selector) {
-  try {
-    const nodes = this.querySelectorAll(selector);
-    return nodes.length > 1 ? nodes : nodes[0];
-  } catch (e) {
-    return null;
-  }
-};
-
-Node.prototype.hasClass = function(cls) {
-  const classList = this.classList;
-  for (let i in classList) {
-    if (classList[i] == cls) {
-      return true;
-    }
-  }
-  return false;
-}
-
-Node.prototype.addClass = function(cls) {
-  if (Array.isArray(cls)) {
-    for (let i in cls) {
-      if (this.hasClass(cls[i])) { continue; }
-      this.classList.add(cls[i]);
-    }
-    return this;
-  }
-  this.classList.add(cls);
-  return this;
-}
-
-Node.prototype.removeClass = function(cls) {
-  if (Array.isArray(cls)) {
-    for (let i in cls) {
-      if (!this.hasClass(cls[i])) { continue; }
-      this.classList.remove(cls[i]);
-    }
-    return this;
-  }
-  this.classList.remove(cls);
-  return this;
-}
-
-Node.prototype.toggleClass = function(cls) {
-  if (Array.isArray(cls)) {
-    for (let i in cls) {
-      this.classList.toggle(cls[i]);
-    }
-    return this;
-  }
-  this.classList.toggle(cls);
-  return this;
-}
-
-Node.prototype.css = function(css) {
-  this.style.cssText = css;
-  return this;
-}
-
-Node.prototype.addCSS = function(css) {
-  this.style.cssText += css;
-  return this;
-}
-
-Node.prototype.getAttr = function(name) {
-  this.getAttribute(name);
-  return this;
-}
-
-Node.prototype.setAttr = function(name, value) {
-  this.setAttribute(name, value);
-  return this;
-}
-
-Node.prototype.removeAttr = function(name, value) {
-  this.removeAttribute(name);
-  return this;
-}
-
-Node.prototype.exec = function(callback) {
-  callback.call(this, 0);
-  return this;
-}
-
-NodeList.prototype.exec = function(callback) {
-  for (let [index, elem] of this.entries()) {
-    callback.call(elem, index);
-  }
-  return this;
-}
-
-const createElement = tag => document.createElement(tag);
-
-const getScrollTop = function() {
-  return document.body.scrollTop || document.documentElement.scrollTop || window.pageYOffset;
-}
-
-const cookie = {
-  set: function(name, value, days) {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = 'expires=' + date.toGMTString();
-    document.cookie = `${name}=${value};${expires};path=/`;
-  },
-  get: function(cname) {
-    const name = cname + '=';
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return '';
-  },
-  del: function(name) {
-    this.set(name, null, -1);
-  }
-}
-
-const formatTime = time => {
-  const minute = Math.floor(time / 60).toString();
-  const second = (time % 60).toFixed(3);
-  return `${minute.padStart(2, '0')}:${second.padStart(6, '0')}`
+if (navigator.userAgent.indexOf('Quark') >= 0) {
+  alert('请使用其他浏览器，夸克无法加载选择的视频');
 }
 
 /*----------------*/
@@ -161,11 +26,11 @@ const total = $('#total');
 const speed = $('#speed');
 const speedRate = $('#speed_rate');
 const changeSpeed = $('#change_speed');
-const videoEnded = $('#video_ended');
 const fullscreen = $('#fullscreen');
 const fullscreen_1 = $('#fullscreen_1');
 const looper = $('#looper');
 const selectLoop = $('#select_loop');
+const selectLoopBox = $('#select_loop_box');
 const loopStart = $('#loop_start');
 const loopEnd = $('#loop_end');
 const progress = $('#progress');
@@ -193,16 +58,21 @@ const loop = {
 const hitsound = $('#hitsound');
 const selectHitsound = $('#select_hitsound');
 const clearHitsound = $('#clear_hitsound');
+const timeStep = $('#time_step_input');
 const speedStep = $('#speed_step_input');
 const uiOffset = $('#ui_offset_input');
 
+const timeStepMap = [0.05, 0.1, 0.2, 0.5];
 const speedStepMap = [0.01, 0.05, 0.1, 0.2];
 const settings = {
+  timeStep: 0.1,
   speedStep: 0.1,
   uiOffset: parseInt(cookie.get('ui_offset')) || uiOffset.value
 }
 
 /*----------------*/
+
+const showMessage = msg => message.innerText = msg;
 
 const closeDialog = (() => {
   let timeout;
@@ -272,13 +142,23 @@ const endedPlaying = () => {
   isEnded = true;
 }
 
+const drawFrame = () => {
+  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, video.videoWidth, video.videoHeight);
+}
+
+const startCapture = () => {
+  if (!isPlaying) return;
+  drawFrame();
+  requestAnimationFrame(startCapture);
+}
+
 const loadFile = event => {
   const file = event.target.files[0];
   if (!file.name.endsWith('.mp4')) {
-    message.innerText = '目前只支持MP4格式的视频';
+    showMessage('目前只支持MP4格式的视频');
     return;
   }
-  message.innerText = '当前文件：\n' + file.name;
+  showMessage('当前文件：\n' + file.name);
   const reader = new FileReader();
   reader.readAsArrayBuffer(file);
   reader.addEventListener('load', async e => {
@@ -289,30 +169,22 @@ const loadFile = event => {
   });
 }
 
-const drawFrame = () => {
-  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, video.videoWidth, video.videoHeight);
-}
-
-const captureFrame = () => {
-  if (!isPlaying) return;
-  drawFrame();
-  requestAnimationFrame(captureFrame);
-}
-
 const judgePos = (x, y) => {
   const sWidth = speed.offsetWidth;
   const sHeight = speed.offsetHeight;
   const sLeft = speed.offsetLeft;
   const sTop = speed.offsetTop;
-  const cWidth = Math.min(outerContainer.offsetWidth, container.offsetWidth);
-  const cHeight = Math.min(outerContainer.offsetHeight, container.offsetWidth);
+  const cWidth = container.offsetWidth;
+  const cHeight = container.offsetHeight;
   const cLeft = container.offsetLeft;
   const cTop = container.offsetTop;
+  const xOffset = sWidth / 2;
+  const yOffset = sHeight / 2;
   let left, top;
   if (x && y) {
     y = y + getScrollTop();
-    left = x < cLeft ? 0 : (x + sWidth > cLeft + cWidth ? cWidth - sWidth : x - cLeft);
-    top = y < cTop ? 0 : (y + sHeight > cTop + cHeight ? cHeight - sHeight : y - cTop);
+    left = x - xOffset < cLeft ? 0 : (x + sWidth - xOffset > cLeft + cWidth ? cWidth - sWidth : x - cLeft - xOffset);
+    top = y - yOffset < cTop ? 0 : (y + sHeight - yOffset > cTop + cHeight ? cHeight - sHeight : y - cTop - yOffset);
     speed.removeClass('transformed');
   } else if (!speed.hasClass('transformed')) {
     left = sLeft - cLeft + sWidth > cWidth ? cWidth - sWidth : sLeft;
@@ -358,7 +230,7 @@ const resize = () => {
       situation_2();
     }
   } else {
-    situation_1(0.95);
+    situation_1(0.85);
   }
 
   if (isLoaded) {
@@ -377,6 +249,18 @@ const resize = () => {
 }
 
 const updateTime = (() => {
+  let timer;
+  return () => {
+    if (timer) return;
+    timer = setTimeout(() => {
+      video.currentTime = progress.value / 1000 * video.duration;
+      clearTimeout(timer);
+      timer = null;
+    }, 0.2 * 1000);
+  }
+})();
+
+const updateTimeStep = (() => {
   let time = 0;
   let timeout;
   return value => {
@@ -384,18 +268,18 @@ const updateTime = (() => {
     time += value;
     current.innerText = `${formatTime(video.currentTime + time)}`;
     clearTimeout(timeout);
-    timeout = setTimeout(function() {
+    timeout = setTimeout(() => {
       if (video.currentTime + time <= 0) {
         video.currentTime = 0;
       } else if (video.currentTime + time >= video.duration) {
-        video.currentTime = video.duration
+        video.currentTime = video.duration;
       } else {
         video.currentTime += time;
       }
       clearTimeout(timeout);
       time = 0;
       timeout = null;
-    }, 0.5 * 1000);
+    }, 0.4 * 1000);
   }
 })();
 
@@ -405,7 +289,7 @@ const setSpeedRate = value => {
 }
 
 const addSpeedRate = value => {
-  speedRate.innerText = Math.floor(speedRate.innerText * 100 + value * 100) / 100;
+  speedRate.innerText = Math.round(speedRate.innerText * 100 + value * 100) / 100;
   if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
   if (speedRate.innerText > 2) speedRate.innerText = 2;
   setSpeedRate(speedRate.innerText);
@@ -413,8 +297,15 @@ const addSpeedRate = value => {
 
 const setLoop = time => {
   if (video.readyState === 0) return;
-  loopStart.innerText = formatTime(loop.start = Math.min(time, loop.end));
-  loopEnd.innerText = formatTime(loop.end = Math.max(time, loop.end));
+  const currentItem = $('#select_loop_box .selected');
+  const otherItem = $('#select_loop_box *:not(.selected)');
+  if (currentItem.id === 'loop_start') {
+    currentItem.innerText = formatTime(loop.start = Math.min(time, loop.end));
+    otherItem.innerText = formatTime(loop.end = Math.max(time, loop.end));
+  } else {
+    currentItem.innerText = formatTime(loop.end = Math.max(time, loop.start));
+    otherItem.innerText = formatTime(loop.start = Math.min(time, loop.start));
+  }
 }
 
 const resetLoop = () => {
@@ -425,7 +316,7 @@ const resetLoop = () => {
 const stopSelectLoop = async () => {
   container.removeClass('setting_loop');
   selectLoop.addClass('hidden');
-  isPlaying ? hideUI() : await video.play();
+  isPlaying ? hideUI() : false;
 }
 
 const toggleSelectLoop = () => {
@@ -437,36 +328,36 @@ const toggleSelectLoop = () => {
   }
 }
 
-const decodeSound = arrayBuffer =>
-  new Promise((resolve, reject) => {
-    audioContext.decodeAudioData(arrayBuffer, buffer => {
-      resolve(buffer);
-    }, err => {
-      alert('音频解码失败');
-      reject();
+const sound = {
+  decode: arrayBuffer =>
+    new Promise((resolve, reject) => {
+      audioContext.decodeAudioData(arrayBuffer, buffer => {
+        resolve(buffer);
+      }, err => {
+        alert('音频解码失败');
+        reject();
+      });
+    }),
+  load: event => {
+    const file = event.target.files[0];
+    if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
+      alert('只支持MP3、OGG和WAV格式的音频');
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.addEventListener('load', async e => {
+      audioBuffer = await sound.decode(e.target.result);
+      selectHitsound.innerText = file.name.length >= 8 ? file.name.slice(0, 5) + '...' : file.name;
     });
-  });
-
-const loadHitsound = event => {
-  const file = event.target.files[0];
-  if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
-    alert('只支持MP3、OGG和WAV格式的音频');
-    return;
+  },
+  play: () => {
+    if (!audioBuffer) return;
+    audioSource = audioContext.createBufferSource();
+    audioSource.buffer = audioBuffer;
+    audioSource.connect(audioContext.destination);
+    audioSource.start(0);
   }
-  const reader = new FileReader();
-  reader.readAsArrayBuffer(file);
-  reader.addEventListener('load', async e => {
-    audioBuffer = await decodeSound(e.target.result);
-    selectHitsound.innerText = file.name.length >= 8 ? file.name.slice(0, 5) + '...' : file.name;
-  });
-}
-
-const playHitsound = () => {
-  if (!audioBuffer) return;
-  audioSource = audioContext.createBufferSource();
-  audioSource.buffer = audioBuffer;
-  audioSource.connect(audioContext.destination);
-  audioSource.start(0);
 }
 
 /*----------------*/
@@ -474,11 +365,18 @@ const playHitsound = () => {
 hitsound.addEventListener('click', event => {
   hitsound.value = null;
 });
-hitsound.addEventListener('change', loadHitsound);
+hitsound.addEventListener('change', sound.load);
 clearHitsound.addEventListener('click', event => {
   audioBuffer = audioSource = null;
   selectHitsound.innerText = '选择';
 });
+
+const setTimeStep = value => {
+  value = (isNaN(+value) || !value) ? 1 : +value;
+  const step = timeStepMap[value];
+  settings.timeStep = $('#time_step').innerText = step;
+  cookie.set('time_step', timeStep.value = value);
+}
 
 const setSpeedStep = value => {
   value = (isNaN(+value) || !value) ? 1 : +value;
@@ -493,10 +391,12 @@ const setOffset = value => {
   cookie.set('ui_offset', settings.uiOffset = offset);
 }
 
+timeStep.addEventListener('input', event => {
+  setTimeStep(timeStep.value);
+});
 speedStep.addEventListener('input', event => {
   setSpeedStep(speedStep.value);
 });
-speedStep.addEventListener('change', event => {});
 uiOffset.addEventListener('input', event => {
   setOffset(uiOffset.value);
 });
@@ -519,27 +419,25 @@ document.addEventListener("fullscreenchange", event => {
     fullscreen_1.removeClass('fa-expand');
   }
 });
+
 progress.addEventListener('input', event => {
   const past = video.currentTime;
-  const passed = progress.value / 100 * video.duration - past;
+  const passed = progress.value / 1000 * video.duration - past;
   current.innerText = `${formatTime(past + passed)}`;
+  updateTime();
 });
 progress.addEventListener('change', event => {
-  video.currentTime = progress.value / 100 * video.duration;
+  updateTime();
 });
-canvas.addEventListener('touchstart', playHitsound);
-canvas.addEventListener('touchmove', event => {
-  event.preventDefault();
-});
+
 video.addEventListener("resize", resize);
 video.addEventListener('loadstart', event => {
-  endedPlaying();
+  stoppedPlaying();
   resize();
   resetLoop();
   progress.disabled = true;
   current.innerText = '-';
   total.innerText = '-';
-  videoEnded.addClass('hidden');
 });
 video.addEventListener('loadeddata', event => {
   progress.disabled = false;
@@ -549,12 +447,12 @@ video.addEventListener('loadeddata', event => {
   video.currentTime = 0;
   addSpeedRate(0);
   preparePlaying();
+  drawFrame();
 });
 video.addEventListener('play', event => {
   startedPlaying();
-  captureFrame();
+  startCapture();
   progress.disabled = false;
-  videoEnded.addClass('hidden');
 });
 video.addEventListener('timeupdate', event => {
   if (loop.start + loop.end > 0 && !container.hasClass('setting_loop')) {
@@ -564,7 +462,7 @@ video.addEventListener('timeupdate', event => {
       video.currentTime = loop.end;
     }
   }
-  progress.value = Math.floor(100 * (video.currentTime / video.duration));
+  if (isPlaying) progress.value = Math.floor(1000 * (video.currentTime / video.duration)) || 0;
   current.innerText = formatTime(video.currentTime);
   drawFrame();
 });
@@ -574,8 +472,15 @@ video.addEventListener('pause', event => {
 video.addEventListener('ended', event => {
   endedPlaying();
   progress.disabled = true;
-  videoEnded.removeClass('hidden');
 });
+
+canvas.addEventListener('touchstart', event => {
+  sound.play();
+}, { passive: false });
+canvas.addEventListener('touchend', event => {}, { passive: false });
+canvas.addEventListener('touchmove', event => {
+  event.preventDefault();
+}, { passive: false });
 
 /*----------------*/
 
@@ -628,7 +533,7 @@ speed.addEventListener('touchmove', event => {
 
 fullscreen.addEventListener('click', event => {
   if (document.fullscreenElement === null) {
-    outerContainer.requestFullscreen()
+    outerContainer.requestFullscreen({ navigationUI: 'hide' })
       .catch(err => {
         showText('请求全屏失败');
       });
@@ -639,25 +544,33 @@ fullscreen.addEventListener('click', event => {
 
 looper.addEventListener('click', event => {
   if (video.readyState === 0) return;
-  toggleSelectLoop();
   changeSpeed.addClass('hidden');
+  toggleSelectLoop();
+});
+selectLoopBox.addEventListener('click', event => {
+  const currentItem = $('#select_loop_box .selected');
+  if (currentItem.id === 'loop_start') {
+    loopStart.removeClass('selected');
+    loopEnd.addClass('selected');
+  } else {
+    loopEnd.removeClass('selected');
+    loopStart.addClass('selected');
+  }
 });
 
-$('#replay').addEventListener('click', async event => {
-  await video.play();
-});
+/*----------------*/
 
 $('#backward_1').addEventListener('click', event => {
-  updateTime(-1);
+  updateTimeStep(-1);
 });
 $('#backward').addEventListener('click', event => {
-  updateTime(-0.1);
+  updateTimeStep(settings.timeStep * -1);
 });
 $('#forward').addEventListener('click', event => {
-  updateTime(0.1);
+  updateTimeStep(settings.timeStep * 1);
 });
 $('#forward_1').addEventListener('click', event => {
-  updateTime(1);
+  updateTimeStep(1);
 });
 
 $('#sub_1').addEventListener('click', event => {
@@ -699,5 +612,6 @@ $('#help_ui_offset').addEventListener('click', event => {
 
 /*----------------*/
 
+setTimeStep(cookie.get('time_step'));
 setSpeedStep(cookie.get('speed_step'));
 setOffset(cookie.get('ui_offset'));

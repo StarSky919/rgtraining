@@ -107,7 +107,7 @@ main>* {
   -ms-flex-align: center;
   align-items: center;
   position: absolute;
-  padding: var(--padding) 0;
+  padding: var(--padding);
   top: 50%;
   left: 50%;
   width: 50%;
@@ -120,6 +120,10 @@ main>* {
 }
 
 .box_1 {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
   margin: var(--padding) 0;
 }
 
@@ -139,10 +143,17 @@ main>* {
 
 #speed_rate {
   display: inline-block;
-  margin: 0 var(--padding);
   padding: 2px 4px;
   color: white;
   text-align: center;
+}
+
+#select_loop_box>* {
+  transition: color 0.2s ease;
+}
+
+#select_loop_box .selected {
+  color: var(--theme-color);
 }
 
 #container i::before {
