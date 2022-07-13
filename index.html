@@ -17,81 +17,110 @@
     <p id="warning">您的浏览器未启用或不支持JavaScript，无法使用本网站。</p>
   </noscript>
   <main>
-    <h2>音乐游戏培训</h2>
-    <p>版本：v1.2.5</p>
+    <h2 class="ul">音乐游戏培训</h2>
     <p id="message">点击“<i class="fas fa-file"></i>”来选择一个视频文件</p>
     <div id="outer_container">
-      <div id="container">
-        <div class="always" id="play"><i class="fas fa-play" id="play_1"></i></div>
-        <div class="always transformed" id="speed"><i class="fas fa-tachometer-alt"></i></div>
-        <div class="always" id="fullscreen"><i class="fas fa-expand" id="fullscreen_1"></i></div>
+      <div id="play" class="always"><i id="play_1" class="fas fa-play"></i></div>
+      <div id="speed" class="always fixed"><i class="fas fa-tachometer-alt"></i></div>
+      <div id="fullscreen" class="always"><i id="fullscreen_1" class="fas fa-expand"></i></div>
+      <div id="right_box">
+        <div id="bookmarker"><i class="fas fa-map-marker-alt"></i></div>
+      </div>
+      <div id="top_control">
+        <div class="invisible"><i class="fas fa-play"></i></div>
+        <div id="ui_lock"><i id="ui_lock_1" class="fas fa-unlock"></i></div>
+        <div id="mute"><i id="mute_1" class="fas fa-volume-up"></i></div>
+        <div id="time"><span id="current">-</span> / <span id="total">-</span></div>
         <div id="looper"><i class="fas fa-sync-alt"></i></div>
-        <div id="top_control">
-          <div class="invisible"><i class="fas fa-play"></i></div>
-          <div id="mute"><i class="fas fa-volume-up" id="mute_1"></i></div>
-          <div id="time"><span id="current">-</span> / <span id="total">-</span></div>
-          <input type="file" id="video_file">
-          <label for="video_file" id="upload"><i class="fas fa-file"></i></label>
-          <div class="invisible"><i class="fas fa-expand"></i></div>
+        <div id="show_bookmarks"><i class="fas fa-map-marked-alt"></i></div>
+        <div class="invisible"><i class="fas fa-expand"></i></div>
+      </div>
+      <div id="dialog" class="dialog always hidden"></div>
+      <div id="change_speed" class="dialog always hidden">
+        <div>设置倍速</div>
+        <div class="box_1">
+          <span id="sub_1"><i class="fas fa-angle-double-left"></i></span>
+          <span id="sub"><i class="fas fa-angle-left"></i></span>
+          <span id="speed_rate">1</span>
+          <span id="add"><i class="fas fa-angle-right"></i></span>
+          <span id="add_1"><i class="fas fa-angle-double-right"></i></span>
         </div>
-        <div id="dialog" class="dialog always hidden"></div>
-        <div id="change_speed" class="dialog always hidden">
-          <div>设置倍速</div>
-          <div class="box_1">
-            <span id="sub_1"><i class="fas fa-angle-double-left"></i></span>
-            <span id="sub"><i class="fas fa-angle-left"></i></span>
-            <span id="speed_rate">1</span>
-            <span id="add"><i class="fas fa-angle-right"></i></span>
-            <span id="add_1"><i class="fas fa-angle-double-right"></i></span>
-          </div>
-          <div class="box_2">
-            <span id="speed_rate_reset"><i class="fas fa-undo"></i></span>
-            <span id="speed_rate_close"><i class="fas fa-times"></i></span>
-          </div>
+        <div class="box_2">
+          <span id="speed_rate_reset"><i class="fas fa-undo"></i></span>
+          <span id="speed_rate_close"><i class="fas fa-times"></i></span>
         </div>
-        <div id="select_loop" class="dialog always hidden">
-          <div>选段循环</div>
-          <div class="box_1" id="select_loop_box">
-            <span id="loop_start" class="selected">00:00.000</span>
-            <span>~</span>
-            <span id="loop_end">00:00.000</span>
-          </div>
-          <div class="box_2">
-            <span id="loop_add"><i class="fas fa-plus"></i></span>
-            <span id="loop_reset"><i class="fas fa-undo"></i></span>
-            <span id="loop_close"><i class="fas fa-times"></i></span>
-          </div>
+      </div>
+      <div id="select_loop" class="dialog always hidden">
+        <div>选段循环</div>
+        <div id="select_loop_box" class="box_1">
+          <span id="loop_start" class="selected">00:00.000</span>
+          <span>~</span>
+          <span id="loop_end">00:00.000</span>
         </div>
-        <div id="bottom_control">
-          <div id="backward_1"><i class="fas fa-angle-double-left"></i></div>
-          <div id="backward"><i class="fas fa-angle-left"></i></div>
-          <input type="range" id="progress" value="0" max="1000" disabled>
-          <div id="forward"><i class="fas fa-angle-right"></i></div>
-          <div id="forward_1"><i class="fas fa-angle-double-right"></i></div>
+        <div class="box_2">
+          <span id="loop_add"><i class="fas fa-plus"></i></span>
+          <span id="loop_reset"><i class="fas fa-undo"></i></span>
+          <span id="loop_close"><i class="fas fa-times"></i></span>
         </div>
-        <canvas class="always" id="canvas"></canvas>
+      </div>
+      <div id="bottom_control">
+        <div id="backward_2"><i class="fas fa-step-backward"></i></div>
+        <div id="backward_1"><i class="fas fa-angle-double-left"></i></div>
+        <div id="backward"><i class="fas fa-angle-left"></i></div>
+        <input type="range" id="progress" value="0" max="1000" disabled>
+        <div id="forward"><i class="fas fa-angle-right"></i></div>
+        <div id="forward_1"><i class="fas fa-angle-double-right"></i></div>
+        <input type="file" id="video_file">
+        <label for="video_file"><i class="fas fa-file"></i></label>
+      </div>
+      <div id="bookmark_box" class="always hidden">
+        <div id="bookmark_box_title"><span>书签列表</span><i class="fas fa-times" id="close_bookmark_box"></i></div>
+        <div id="bookmark_list"></div>
+      </div>
+      <div id="cover" class="always"></div>
+      <div id="container" class="always">
+        <canvas id="canvas"></canvas>
+        <video id="video"></video>
       </div>
     </div>
-    <h3>设置</h3>
-    <p>
-      时间调整步长：<span id="time_step"></span>秒
-      <input type="range" class="range" id="time_step_input" value="1" max="3">
-    </p>
-    <p>
-      倍速调整步长：<span id="speed_step"></span>倍
-      <input type="range" class="range" id="speed_step_input" value="1" max="3">
-    </p>
-    <p>
-      <i class="fas fa-question-circle" id="help_ui_offset"></i>
-      UI边界偏移：<span id="ui_offset"></span>%
-      <input type="range" class="range" id="ui_offset_input" value="0" max="100">
-    </p>
-    <p>
+    <h3 class="ul">设置</h3>
+    <div id="time_step"></div>
+    <div id="speed_step"></div>
+    <div id="ui_offset"></div>
+    <div id="play_mode"></div>
+    <div class="setting_box">
       <input type="file" id="hitsound">
-      自定义打击音：
-      <label for="hitsound"><span class="button" id="select_hitsound">选择</span></label>
-      <span class="button" id="clear_hitsound">清除</span>
-    </p>
+      <span>自定义打击音：</span>
+      <span>
+        <label id="select_hitsound" class="button" for="hitsound">选择</label>
+        <span id="clear_hitsound" class="button">清除</span>
+      </span>
+    </div>
+    <h3 class="ul">常见问题</h3>
+    <p><strong>Q：全屏时划动屏幕会触发亮度/音量调整？<br />Q：视频可以加载播放但是没有画面？</strong></p>
+    <p>A：可以尝试切换视频播放模式。如果仍然无法解决，请更换浏览器。</p>
+    <p><strong>Q：视频无法加载？</strong></p>
+    <p>A：选择视频的文件名中尽量不要包括除“_”、“-”和“.”以外的符号，或者尝试更换浏览器。如果仍然无法解决，说明你的设备不受支持。</p>
+    <p><strong>Q：调速按钮容易误触？</strong></p>
+    <p>A：调速按钮可以随意拖动，长按回到原位。如果横屏时调速按钮不能拖动到屏幕边缘位置，可以尝试调整UI边界偏移。</p>
+    <p><strong>Q：如何删除多余的书签？</strong></p>
+    <p>A：在未加载任何视频时打开书签列表，就能看到所有已添加书签的视频，可以进行删除。</p>
+    <p><strong>Q：无法横屏？</strong></p>
+    <p>A：打开设备的自动旋转或关闭方向锁定。</p>
+    <h3 class="ul">应用信息</h3>
+    <p>版本：v1.3.0</p>
+    <p>作者：StarSky919</p>
+    <p>网址：<a href="https://rgtraining.starsky919.xyz/"></a></p>
+    <p>项目地址：<a href="https://github.com/StarSky919/rgtraining">StarSky919/rgtraining</a>（GitHub）</p>
+    <p>推荐使用Via和Firefox浏览器。</p>
+    <p>不同设备与浏览器平台的兼容性有待测试，可以加群讨论（下方链接直达）。</p>
+    <h3 class="ul">联系方式</h3>
+    <p>作者QQ：<a href="http://wpa.qq.com/msgrd?v=3&uin=2197972830&site=qq&menu=yes" target="_blank">starsky919✩</a>（2197972830）</p>
+    <p>QQ群：<a href="https://jq.qq.com/?_wv=1027&k=9O0nz0C9" target="_blank">StarSky919の开发交流群</a>（486908465）</p>
+    <p>B站：<a href="https://space.bilibili.com/303191468" target="_blank">StarSky919</a>（303191468）</p>
+    <p>欢迎各位来群里反馈问题或是提出建议～</p>
+    <p>如果要加个人QQ请注明来意，没有特殊情况的话一律拒绝。</p>
+    <hr />
     <p>RGTraining © 2022 StarSky919</p>
   </main>
   <script src="index.js" type="text/javascript"></script>
@@ -99,6 +128,7 @@
   <script>
     var _hmt = _hmt || [];
     (function() {
+      if (location.href.startsWith('http://localhost:')) return;
       var hm = document.createElement("script");
       hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
       var s = document.getElementsByTagName("script")[0];

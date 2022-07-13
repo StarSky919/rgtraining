@@ -35,11 +35,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-:root,
-input {
-  font-family: "CeraPro", "HarmonyOS Sans SC", sans-serif;
-}
-
 html,
 body {
   background: var(--background-color);
@@ -52,6 +47,7 @@ h4,
 h5,
 h6 {
   margin: 0.65rem 0;
+  width: 100%;
 }
 
 h1.ul,
@@ -110,7 +106,7 @@ a:active {
 }
 
 a[href^="http"]:empty::before {
-  content: "查看链接";
+  content: attr(href);
 }
 
 @media screen and (min-width: 768px) {
@@ -157,10 +153,6 @@ img {
   width: 100%;
   height: auto;
   margin: 0.65rem 0;
-}
-
-code {
-  font-family: "JetBrainsMono", monospace;
 }
 
 input[type="radio"],
