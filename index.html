@@ -96,6 +96,10 @@
         <span id="clear_hitsound" class="button">清除</span>
       </span>
     </div>
+    <div class="setting_box">
+      <span>本次更新内容：</span>
+      <span id="updates" class="button">查看</span>
+    </div>
     <h3 class="ul">常见问题</h3>
     <p><strong>Q：全屏时划动屏幕会触发亮度/音量调整？<br />Q：视频可以加载播放但是没有画面？</strong></p>
     <p>A：可以尝试切换视频播放模式。如果仍然无法解决，请更换浏览器。</p>
@@ -128,7 +132,6 @@
   <script>
     var _hmt = _hmt || [];
     (function() {
-      if (location.href.startsWith('http://localhost:')) return;
       var hm = document.createElement("script");
       hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
       var s = document.getElementsByTagName("script")[0];

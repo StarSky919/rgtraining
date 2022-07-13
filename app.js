@@ -210,8 +210,8 @@ const uiLock = $('#ui_lock');
 const uiLock_1 = $('#ui_lock_1');
 const mute = $('#mute');
 const mute_1 = $('#mute_1');
-const videoFile = $("#video_file");
-const upload = $("#upload");
+const videoFile = $('#video_file');
+const upload = $('#upload');
 const current = $('#current');
 const total = $('#total');
 const speed = $('#speed');
@@ -598,9 +598,9 @@ $('#clear_hitsound').addEventListener('click', Hitsound.clear);
 
 /*----------------*/
 
-window.addEventListener("load", resize);
-window.addEventListener("resize", resize);
-document.addEventListener("fullscreenchange", event => {
+window.addEventListener('load', resize);
+window.addEventListener('resize', resize);
+document.addEventListener('fullscreenchange', event => {
   if (document.fullscreenElement === null) {
     outerContainer.removeClass('fullscreen');
     fullscreen_1.addClass('fa-expand');
@@ -622,7 +622,7 @@ progress.addEventListener('change', event => {
   video.currentTime = progress.value / 1000 * video.duration;
 });
 
-video.addEventListener("resize", resize);
+video.addEventListener('resize', resize);
 video.addEventListener('loadstart', event => {
   stoppedPlaying();
   resize();
@@ -890,4 +890,15 @@ const play_mode = new SettingItem.toggle({
   } else {
     container.removeChild(video);
   }
+});
+
+/*----------------*/
+
+$('#updates').addEventListener('click', event => {
+  alert('v1.3.0' +
+    '\n1. 重做了页面UI， 为播放器加入了过渡动画；' +
+    '\n2. 增加了书签功能， 可以为每个视频单独保存最多10个时间点（ 以文件名作为标识）；' +
+    '\n3. 增加了UI锁定功能， 锁定后可以在不隐藏播放器UI的情况下播放视频；' +
+    '\n4. 重做了UI边界偏移（ 现在以屏幕和视频的宽高比为准）；' +
+    '\n5. 增加了视频播放模式选项以适配不同的浏览器。');
 });
