@@ -125,6 +125,25 @@ const cookie = {
   }
 }
 
+const debounce = function(callback, delay) {
+  let timeout;
+  return function() {
+    clearTimeout(timeout);
+    const [that, args] = [this, arguments];
+    timeout = setTimeout(function() {
+      callback.apply(that, args);
+      clearTimeout(timeout);
+      timeout = null;
+    }, delay);
+  }
+}
+
+const timeout = function(delay) {
+  return new Promise(function(resolve) {
+    setTimeout(resolve, delay);
+  });
+}
+
 const Time = class Time {
   static millisecond = 1;
   static second = 1000;
@@ -215,7 +234,7 @@ const Datastore = class {
     Array.from({ length: s.length }, (_, index) => s.key(index))
       .filter(key => key.startsWith(this.#prefix))
       .forEach(key => data[key.replace(this.#prefix, '')] = JSON.parse(s.getItem((key))));
-    return data;
+    return JSON.stringify(data) === '{}' ? null : data;
   }
 
   has(key) {

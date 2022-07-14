@@ -2,11 +2,101 @@ cookie.remove('time_step');
 cookie.remove('speed_step');
 cookie.remove('ui_offset');
 
-/*----------------*/
+/**
+ * ----------------
+ * 获取DOM元素和定义常量
+ * ----------------
+ */
 
-const { settings, SettingItem } = (() => {
-  const settings = new Datastore('$');
-  const toggle = class {
+window.AudioContext =
+  AudioContext ||
+  webkitAudioContext ||
+  mozAudioContext ||
+  msAudioContext;
+window.requestAnimationFrame =
+  requestAnimationFrame ||
+  webkitRequestAnimationFrame;
+
+const body = $('body');
+
+const outerMessage = $('#outer_message');
+const outerContainer = $('#outer_container');
+const container = $('#container');
+
+const play_1 = $('#play_1');
+const mute_1 = $('#mute_1');
+const uiLock_1 = $('#ui_lock_1');
+const current = $('#current');
+const total = $('#total');
+const videoFile = $('#video_file');
+const selectLoop = $('#select_loop');
+const loopStart = $('#loop_start');
+const loopEnd = $('#loop_end');
+const sidebarBox = $('#sidebar_box');
+const bookmarkList = $('#bookmark_list');
+
+const progress = $('#progress');
+const fullscreen_1 = $('#fullscreen_1');
+
+const speed = $('#speed');
+const speedRate = $('#speed_rate');
+const changeSpeed = $('#change_speed');
+
+const message = $('#message');
+const cover = $('#cover');
+const canvas = $('#canvas');
+const video = $('#video');
+
+const ctx = canvas.getContext('2d');
+const pStyle = getComputedStyle(play);
+const loop = {
+  start: 0,
+  end: 0
+};
+const settings = new Datastore('$');
+const bookmarks = new Datastore('&');
+
+if (!settings.get('play_mode')) container.removeChild(video);
+
+/**
+ * ----------------
+ * 定义功能性函数
+ * ----------------
+ */
+
+class TouchPoint {
+  id;
+  x;
+  y;
+  element;
+  removed = false;
+
+  constructor(identifier, pageX, pageY) {
+    this.id = identifier;
+    this.element = createElement('i');
+    cover.appendChild(this.element);
+    this.setX(pageX);
+    this.setY(pageY);
+  }
+
+  setX(x) {
+    this.x = x;
+    this.element.style.left = this.x - outerContainer.offsetLeft + 'px';
+  }
+
+  setY(y) {
+    this.y = y;
+    this.element.style.top = this.y - outerContainer.offsetTop + 'px';
+  }
+
+  remove() {
+    this.removed = true;
+    this.element.addClass('removed');
+  }
+}
+
+const SettingItem = {
+  toggle: class {
     id;
     container;
     textBox;
@@ -15,12 +105,14 @@ const { settings, SettingItem } = (() => {
     input;
     button;
     options;
+    #helpClickCallback;
 
     constructor(options) {
       if (typeof options !== 'object') throw new Error('Options required');
+      if (isNullish(options.valueMap)) options.valueMap = ['关闭', '开启'];
       this.container = options.container;
       this.id = options.container.id;
-      this.options = options;
+      this.options = options
       this.#init();
       const checked = !!settings.get(this.id);
       this.checked = checked;
@@ -28,7 +120,7 @@ const { settings, SettingItem } = (() => {
 
     #init() {
       const { text, buttonText, help, valueMap, checked } = this.options;
-      this.container.addClass('setting_box');
+      this.container.addClass('setting_item');
 
       const input = createElement('input');
       input.type = 'checkbox';
@@ -36,20 +128,20 @@ const { settings, SettingItem } = (() => {
       this.input = input;
 
       const textBox = createElement('span');
-      if (typeof help === 'string') {
-        const _help = createElement('i');
-        _help.style.marginRight = '0.2em';
-        _help.addClass('fas', 'fa-question-circle');
-        _help.addEventListener('click', event => alert(help));
-        this.help = _help;
-        textBox.appendChild(_help);
-      }
       const _text = createElement('span');
       _text.id = this.id + '_text';
       _text.innerText = text.replace('$1', checked ? valueMap[1] : valueMap[0]);
       this.text = _text;
       textBox.appendChild(_text);
       this.textBox = textBox;
+      if (typeof help === 'string') {
+        const _help = createElement('i');
+        _help.style.marginLeft = '0.25em';
+        _help.addClass('fas', 'fa-question-circle');
+        _help.addEventListener('click', event => this.#helpClickCallback ? this.#helpClickCallback(help) : showDialog(help));
+        this.help = _help;
+        textBox.appendChild(_help);
+      }
 
       const button = createElement('label');
       button.addClass('button');
@@ -65,8 +157,14 @@ const { settings, SettingItem } = (() => {
       });
     }
 
-    onClick(callback) {
+    onClick(callback, init) {
       this.input.addEventListener('click', callback.bind(this));
+      if (init) callback.call(this);
+      return this;
+    }
+
+    onHelpClick(callback) {
+      this.#helpClickCallback = callback.bind(this);
       return this;
     }
 
@@ -75,8 +173,7 @@ const { settings, SettingItem } = (() => {
     }
 
     set checked(value) {
-      const checked = typeof value === 'boolean' ? value : !!this.options.valueMap.lastIndexOf(value);
-      this.input.checked = checked;
+      this.input.checked = value;
       this.input.dispatchEvent(new Event('click'));
     }
 
@@ -87,8 +184,8 @@ const { settings, SettingItem } = (() => {
       this.container.appendChild(this.button);
       return this;
     }
-  }
-  const range = class {
+  },
+  range: class {
     id;
     container;
     textBox;
@@ -96,6 +193,7 @@ const { settings, SettingItem } = (() => {
     text;
     input;
     options;
+    #helpClickCallback;
 
     constructor(options) {
       if (typeof options !== 'object') throw new Error('Options required');
@@ -111,7 +209,7 @@ const { settings, SettingItem } = (() => {
 
     #init() {
       const options = this.options;
-      this.container.addClass('setting_box');
+      this.container.addClass('setting_item');
 
       const input = createElement('input');
       input.addClass('range');
@@ -128,31 +226,38 @@ const { settings, SettingItem } = (() => {
       if (options.value) this.value = options.value;
 
       const textBox = createElement('span');
-      if (typeof options.help === 'string') {
-        const help = createElement('i');
-        help.style.marginRight = '0.2em';
-        help.addClass('fas', 'fa-question-circle');
-        help.addEventListener('click', event => alert(options.help));
-        this.help = help;
-        textBox.appendChild(help);
-      }
       const text = createElement('span');
       text.id = this.id + '_text';
       text.innerText = options.text.replace('$1', this.value);
       this.text = text;
       textBox.appendChild(text);
+      if (typeof options.help === 'string') {
+        const help = createElement('i');
+        help.style.marginLeft = '0.25em';
+        help.addClass('fas', 'fa-question-circle');
+        help.addEventListener('click', event => this.#helpClickCallback ? this.#helpClickCallback(options.help) : showDialog(options.help));
+        this.help = help;
+        textBox.appendChild(help);
+      }
       this.textBox = textBox;
       this.input.addEventListener('input', event => this.text.innerText =
         this.options.text.replace('$1', settings.set(this.id, this.value)));
     }
 
-    onInput(callback) {
+    onInput(callback, init) {
       this.input.addEventListener('input', callback.bind(this));
+      if (init) callback.call(this);
       return this;
     }
 
-    onChange(callback) {
+    onChange(callback, init) {
       this.input.addEventListener('change', callback.bind(this));
+      if (init) callback.call(this);
+      return this;
+    }
+
+    onHelpClick(callback) {
+      this.#helpClickCallback = callback.bind(this);
       return this;
     }
 
@@ -180,136 +285,97 @@ const { settings, SettingItem } = (() => {
       return this;
     }
   }
+}
 
-  return {
-    settings,
-    SettingItem: {
-      toggle,
-      range
-    }
+const createLongClick =
+  (element, interval, callback) => (() => {
+    let longClickTimer;
+    let isLongClicked = false;
+    element.addEventListener('touchstart', event => {
+      isLongClicked = false;
+      longClickTimer = setTimeout(async () => {
+        clearTimeout(longClickTimer);
+        longClickTimer = null;
+        isLongClicked = true;
+        await callback.call(this);
+      }, interval * Time.second);
+    });
+    element.addEventListener('touchmove', event => {
+      clearTimeout(longClickTimer);
+      longClickTimer = null;
+    });
+    element.addEventListener('touchend', event => {
+      isLongClicked = false;
+      if (longClickTimer) clearTimeout(longClickTimer);
+    });
+    return () => isLongClicked;
+  })();
+
+const showDialog = async (msg, title = '信息') => {
+  const dialogs = $('body>.dialog');
+  const dialogCount = isNullish(dialogs) ? 0 : dialogs.length;
+  const cover = createElement('div');
+  cover.addClass('box_cover', 'hidden');
+  cover.style.zIndex = 9921 + dialogCount;
+  const dialog = createElement('div');
+  dialog.addClass('box_container', 'dialog');
+  dialog.style.zIndex = 9922 + dialogCount;
+  const tab = createElement('div');
+  tab.addClass('tab');
+  const _title = createElement('label'),
+    close = createElement('label');
+  _title.innerText = title;
+  close.addClass('close_box', 'fas', 'fa-times');
+  tab.appendChild(_title);
+  tab.appendChild(close);
+  dialog.appendChild(tab);
+  const box = createElement('div');
+  box.addClass('box', 'dialog');
+  const message = createElement('p');
+  message.innerText = msg;
+  box.appendChild(message);
+  dialog.appendChild(box);
+  body.appendChild(cover);
+  body.appendChild(dialog);
+  const closeDialog = async () => {
+    dialog.removeClass('display');
+    cover.addClass('hidden');
+    await timeout(0.3 * Time.second);
+    body.removeChild(dialog);
+    body.removeChild(cover);
   }
-})();
+  cover.addEventListener('click', closeDialog);
+  close.addEventListener('click', closeDialog);
+  await timeout(0);
+  cover.removeClass('hidden');
+  dialog.addClass('display');
+}
 
-/*----------------*/
-
-window.AudioContext =
-  AudioContext ||
-  webkitAudioContext ||
-  mozAudioContext ||
-  msAudioContext;
-window.requestAnimationFrame =
-  requestAnimationFrame ||
-  webkitRequestAnimationFrame;
-const message = $('#message');
-const container = $('#container');
-const outerContainer = $('#outer_container');
-const play = $('#play');
-const pStyle = getComputedStyle(play);
-const play_1 = $('#play_1');
-const uiLock = $('#ui_lock');
-const uiLock_1 = $('#ui_lock_1');
-const mute = $('#mute');
-const mute_1 = $('#mute_1');
-const videoFile = $('#video_file');
-const upload = $('#upload');
-const current = $('#current');
-const total = $('#total');
-const speed = $('#speed');
-const speedRate = $('#speed_rate');
-const changeSpeed = $('#change_speed');
-const fullscreen = $('#fullscreen');
-const fullscreen_1 = $('#fullscreen_1');
-const selectLoop = $('#select_loop');
-const loopStart = $('#loop_start');
-const loopEnd = $('#loop_end');
-const bookmarkBox = $('#bookmark_box');
-const bookmarkList = $('#bookmark_list');
-const progress = $('#progress');
-const dialog = $('#dialog');
-
-const canvas = $('#canvas');
-const ctx = canvas.getContext('2d');
-const video = $('#video');
-if (!settings.get('play_mode')) container.removeChild(video);
-const cover = $('#cover');
-
-const audioContext = new window.AudioContext();
-let audioBuffer;
-let audioSource;
-
-const loop = {
-  start: 0,
-  end: 0
-};
-const bookmarks = new Datastore('&');
-let uiLocked = false;
-
-/*----------------*/
-
-const showMessage = msg => message.innerText = msg;
-
-const closeDialog = (() => {
+const closeMessage = (() => {
   let timeout;
   return delay => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
-      dialog.addClass('hidden');
+      message.addClass('hidden');
       clearTimeout(timeout);
       timeout = null;
     }, delay * Time.second);
   }
 })();
 
-const showDialog = (str, delay = 2) => {
-  dialog.innerText = str;
-  dialog.removeClass('hidden');
-  closeDialog(delay);
+const showMessage = (msg, delay = 2) => {
+  message.innerText = msg;
+  message.removeClass('hidden');
+  closeMessage(delay);
 }
 
 const setIconSize = size => {
-  outerContainer.style.setProperty('--padding', size * 0.85 + 'em');
+  outerContainer.style.setProperty('--ui-spacing', size * 0.85 + 'em');
   outerContainer.style.setProperty('--font-size', size * 1.65 + 'rem');
 }
 
 const setMargin = value => {
   outerContainer.style.setProperty('--margin', value);
-}
-
-const showUI = () => {
-  const nodeList = $('#outer_container:not(.setting_loop)>*:not(.always)');
-  if (!isNullish(nodeList)) nodeList.exec(function() { this.removeClass('hidden') });
-}
-
-const hideUI = () => {
-  const nodeList = $('#outer_container:not(.setting_loop)>*:not(.always)');
-  if (!isNullish(nodeList) && !uiLocked) nodeList.exec(function() { this.addClass('hidden') });
-}
-
-const preparePlaying = () => {
-  showUI();
-  outerContainer.removeClass('playing');
-  play_1.addClass('fa-play');
-  play_1.removeClass('fa-pause');
-  play_1.removeClass('fa-undo');
-}
-const startedPlaying = () => {
-  hideUI();
-  outerContainer.addClass('playing');
-  play_1.addClass('fa-pause');
-  play_1.removeClass('fa-play');
-  play_1.removeClass('fa-undo');
-}
-const stoppedPlaying = () => {
-  showUI();
-  outerContainer.removeClass('playing');
-  play_1.addClass('fa-play');
-  play_1.removeClass('fa-pause');
-}
-const endedPlaying = () => {
-  showUI();
-  outerContainer.removeClass('playing');
-  play_1.addClass('fa-undo');
-  play_1.removeClass('fa-pause');
 }
 
 const drawFrame = () => {
@@ -373,13 +439,13 @@ const resize = () => {
 
   canvas.width = w * devicePixelRatio;
   canvas.height = h * devicePixelRatio;
-  container.style.width = canvas.style.width = `${w}px`
-  container.style.height = canvas.style.height = `${h}px`;
+  container.style.width = canvas.style.width = video.style.width = `${w}px`
+  container.style.height = canvas.style.height = video.style.height = `${h}px`;
 
   if (cw > ch && cAspectRatio > vAspectRatio) {
-    setMargin(`calc(var(--padding) + (${outerContainer.offsetWidth}px - ${container.style.width}) / 2 * ${settings.get('ui_offset') / 100})`);
+    setMargin(`calc(var(--ui-spacing) + (${outerContainer.offsetWidth}px - ${container.style.width}) / 2 * ${settings.get('ui_offset') / 100})`);
   } else {
-    setMargin(`var(--padding)`);
+    setMargin(`var(--ui-spacing)`);
   }
 
   if (isLoaded) {
@@ -389,54 +455,44 @@ const resize = () => {
   }
 
   judgePos();
-  setIconSize(Math.sqrt(cw / 1000));
+  setIconSize(cw > ch ? Math.sqrt(cw / 1000) : Math.sqrt(cw / 1000));
 }
 
-const updateTime = (() => {
-  let timer;
-  return () => {
-    if (timer) return;
-    timer = setTimeout(() => {
-      video.currentTime = progress.value / 1000 * video.duration;
-      clearTimeout(timer);
-      timer = null;
-    }, 0.4 * Time.second);
-  }
-})();
-
-const updateTimeStep = (() => {
-  let time = 0;
-  let timeout;
-  return value => {
-    if (video.readyState === 0 || video.ended) return;
-    time += value;
-    current.innerText = `${Time.formatTimeFloat(video.currentTime + time)}`;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      if (video.currentTime + time <= 0) {
-        video.currentTime = 0;
-      } else if (video.currentTime + time >= video.duration) {
-        video.currentTime = video.duration;
-      } else {
-        video.currentTime += time;
-      }
-      clearTimeout(timeout);
-      time = 0;
-      timeout = null;
-    }, 0.4 * Time.second);
-  }
-})();
-
-const setSpeedRate = value => {
-  if (video.readyState === 0) return;
-  video.playbackRate = parseFloat(value);
+let uiLocked = false;
+const showUI = () => {
+  const nodeList = $('#outer_container:not(.setting_loop)>*:not(.always)');
+  if (!isNullish(nodeList)) nodeList.exec(function() { this.removeClass('hidden') });
+}
+const hideUI = () => {
+  const nodeList = $('#outer_container:not(.setting_loop)>*:not(.always)');
+  if (!isNullish(nodeList) && !uiLocked) nodeList.exec(function() { this.addClass('hidden') });
 }
 
-const addSpeedRate = value => {
-  speedRate.innerText = Math.round(speedRate.innerText * 100 + value * 100) / 100;
-  if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
-  if (speedRate.innerText > 2) speedRate.innerText = 2;
-  setSpeedRate(speedRate.innerText);
+const preparePlaying = () => {
+  showUI();
+  outerContainer.removeClass('playing');
+  play_1.addClass('fa-play');
+  play_1.removeClass('fa-pause');
+  play_1.removeClass('fa-undo');
+}
+const startedPlaying = () => {
+  hideUI();
+  outerContainer.addClass('playing');
+  play_1.addClass('fa-pause');
+  play_1.removeClass('fa-play');
+  play_1.removeClass('fa-undo');
+}
+const stoppedPlaying = () => {
+  showUI();
+  outerContainer.removeClass('playing');
+  play_1.addClass('fa-play');
+  play_1.removeClass('fa-pause');
+}
+const endedPlaying = () => {
+  showUI();
+  outerContainer.removeClass('playing');
+  play_1.addClass('fa-undo');
+  play_1.removeClass('fa-pause');
 }
 
 const setLoop = time => {
@@ -469,31 +525,15 @@ const toggleSelectLoop = () => {
   }
 }
 
-const loadFile = event => {
-  const file = event.target.files[0];
-  if (!file.name.endsWith('.mp4')) {
-    showMessage('目前只支持MP4格式的视频');
-    return;
-  }
-  showMessage('当前文件：\n' + file.name);
-  const reader = new FileReader();
-  reader.readAsArrayBuffer(file);
-  reader.addEventListener('load', async e => {
-    const buffer = e.target.result;
-    const blob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
-    video.name = file.name;
-    video.src = window.URL.createObjectURL(blob);
-    await video.load();
-  });
-}
-
 const loadBookmarks = () => {
-  bookmarkList.innerHTML = '';
+  bookmarkList.innerHTML = '<span>空空如也</span>';
   if (video.readyState === 0) {
     const data = bookmarks.getAll();
+    if (isNullish(data)) return;
+    bookmarkList.innerHTML = '';
     Object.entries(data).forEach(([key, value]) => {
       const bookmarkItem = createElement('div');
-      bookmarkItem.addClass('time_item');
+      bookmarkItem.addClass('list_item');
 
       const videoName = createElement('span');
       videoName.addClass('text');
@@ -513,12 +553,12 @@ const loadBookmarks = () => {
   } else {
     const data = bookmarks.get(video.name);
     if (isNullish(data)) return;
+    bookmarkList.innerHTML = '';
     data.sort((a, b) => a - b).forEach((time, index) => {
       const timeItem = createElement('div');
-      timeItem.addClass('time_item');
+      timeItem.addClass('list_item');
 
       const timeTextBox = createElement('span');
-      timeTextBox.addClass('time_text');
       const jumpToTime = createElement('i');
       jumpToTime.addClass('fas', 'fa-location-arrow');
       jumpToTime.addEventListener('click', async event => {
@@ -549,57 +589,281 @@ const loadBookmarks = () => {
   }
 }
 
-/*----------------*/
-
-const hitsound = $('#hitsound');
-const selectHitsound = $('#select_hitsound');
-
-const Hitsound = {
-  decode: arrayBuffer =>
-    new Promise((resolve, reject) => {
-      audioContext.decodeAudioData(arrayBuffer, buffer => {
-        resolve(buffer);
-      }, err => {
-        alert('音频解码失败');
-        reject();
-      });
-    }),
-  load: event => {
-    const file = event.target.files[0];
-    if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
-      alert('只支持MP3、OGG和WAV格式的音频');
-      return;
-    }
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(file);
-    reader.addEventListener('load', async e => {
-      audioBuffer = await Hitsound.decode(e.target.result);
-      selectHitsound.innerText = file.name.length >= 8 ? file.name.slice(0, 5) + '...' : file.name;
-    });
-  },
-  play: () => {
-    if (!audioBuffer) return;
-    audioSource = audioContext.createBufferSource();
-    audioSource.buffer = audioBuffer;
-    audioSource.connect(audioContext.destination);
-    audioSource.start(0);
-  },
-  clear: () => {
-    audioBuffer = audioSource = null;
-    selectHitsound.innerText = '选择';
+const updateTimeStep = (() => {
+  let time = 0;
+  let timeout;
+  return value => {
+    if (video.readyState === 0 || video.ended) return;
+    if (video.currentTime + time > video.duration || video.currentTime + time < 0) return;
+    time += value;
+    showMessage(`${Time.formatTimeFloat(video.currentTime + time)}\n${time >= 0 ? `+${time.toFixed(3)}` : time.toFixed(3)}秒`, 1);
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      if (video.currentTime + time <= 0) {
+        video.currentTime = 0;
+      } else if (video.currentTime + time >= video.duration) {
+        video.currentTime = video.duration;
+      } else {
+        video.currentTime += time;
+      }
+      clearTimeout(timeout);
+      time = 0;
+      timeout = null;
+    }, 0.4 * Time.second);
   }
+})();
+
+const setSpeedRate = value => {
+  if (video.readyState === 0) return;
+  video.playbackRate = parseFloat(value);
 }
 
-hitsound.addEventListener('click', event => {
-  hitsound.value = null;
+const addSpeedRate = value => {
+  speedRate.innerText = Math.round(speedRate.innerText * 100 + value * 100) / 100;
+  if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
+  if (speedRate.innerText > 2) speedRate.innerText = 2;
+  setSpeedRate(speedRate.innerText);
+}
+
+/**
+ * ----------------
+ * 定义播放器控件的功能
+ * ----------------
+ */
+
+//顶部控制栏
+
+$('#play').addEventListener('click', async event => {
+  if (video.readyState === 0) return;
+  if (!video.paused) {
+    return await video.pause();
+  }
+  return await video.play();
 });
-hitsound.addEventListener('change', Hitsound.load);
-$('#clear_hitsound').addEventListener('click', Hitsound.clear);
+$('#mute').addEventListener('click', event => {
+  if (video.volume < 1) {
+    video.volume = 1;
+    mute_1.addClass('fa-volume-up');
+    mute_1.removeClass('fa-volume-mute');
+  } else {
+    video.volume = 0;
+    mute_1.addClass('fa-volume-mute');
+    mute_1.removeClass('fa-volume-up');
+  }
+});
+$('#ui_lock').addEventListener('click', async event => {
+  if (uiLocked === true) {
+    uiLocked = false;
+    uiLock_1.addClass('fa-unlock');
+    uiLock_1.removeClass('fa-lock');
+    if (!video.paused) hideUI();
+  } else {
+    uiLocked = true;
+    uiLock_1.addClass('fa-lock');
+    uiLock_1.removeClass('fa-unlock');
+  }
+});
 
-/*----------------*/
+videoFile.addEventListener('click', event => {
+  videoFile.value = null;
+});
+videoFile.addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (!['mp4'].includes(file.name.slice(-3))) {
+    showDialog('目前只支持MP4格式的视频');
+    return;
+  }
+  outerMessage.innerText = '当前文件：\n' + file.name;
+  const reader = new FileReader();
+  reader.readAsArrayBuffer(file);
+  reader.addEventListener('load', async e => {
+    const buffer = e.target.result;
+    const blob = new Blob([new Uint8Array(buffer)], { type: 'video/mp4' });
+    video.name = file.name;
+    video.src = window.URL.createObjectURL(blob);
+    await video.load();
+  });
+});
 
-window.addEventListener('load', resize);
+$('#looper').addEventListener('click', event => {
+  if (video.readyState === 0) return;
+  changeSpeed.addClass('hidden');
+  sidebarBox.addClass('hidden');
+  toggleSelectLoop();
+});
+$('#select_loop_box').addEventListener('click', event => {
+  const currentItem = $('#select_loop_box .selected');
+  if (currentItem.id === 'loop_start') {
+    loopStart.removeClass('selected');
+    loopEnd.addClass('selected');
+  } else {
+    loopEnd.removeClass('selected');
+    loopStart.addClass('selected');
+  }
+});
+$('#loop_add').addEventListener('click', event => {
+  setLoop(video.currentTime);
+});
+$('#loop_reset').addEventListener('click', event => {
+  resetLoop();
+});
+$('#loop_close').addEventListener('click', event => {
+  stopSelectLoop();
+});
+
+$('#show_sidebar').addEventListener('click', event => {
+  changeSpeed.addClass('hidden');
+  stopSelectLoop();
+  sidebarBox.toggleClass('hidden');
+  loadBookmarks();
+});
+$('#close_sidebar_box').addEventListener('click', event => {
+  sidebarBox.addClass('hidden');
+});
+$('#clear_all_bookmarks').addEventListener('click', event => {
+  if (video.readyState === 0) {
+    bookmarks.clear();
+  } else {
+    bookmarks.remove(video.name);
+  };
+  loadBookmarks();
+});
+
+//底部控制栏
+
+$('#backward_2').addEventListener('click', event => {
+  video.currentTime = 0;
+});
+
+$('#backward_1').addEventListener('click', event => {
+  updateTimeStep(-1);
+});
+const _backward_1 = createLongClick($('#backward_1'), 0.35, async () => {
+  while (_backward_1()) {
+    updateTimeStep(-1);
+    await timeout(20);
+  }
+});
+
+$('#backward').addEventListener('click', event => {
+  updateTimeStep(settings.get('time_step') * -1);
+});
+const _backward = createLongClick($('#backward'), 0.35, async () => {
+  while (_backward) {
+    updateTimeStep(settings.get('time_step') * -1);
+    await timeout(20);
+  }
+});
+
+let slidingProgress = false;
+progress.addEventListener('input', event => {
+  slidingProgress = true;
+  const past = video.currentTime;
+  const passed = progress.value / 1000 * video.duration - past;
+  showMessage(`${Time.formatTimeFloat(past + passed)}\n${passed >= 0 ? `+${passed.toFixed(3)}` : passed.toFixed(3)}秒`, 1);
+});
+progress.addEventListener('change', event => {
+  slidingProgress = false;
+  video.currentTime = progress.value / 1000 * video.duration;
+});
+
+$('#forward').addEventListener('click', event => {
+  updateTimeStep(settings.get('time_step') * 1);
+});
+const _forward = createLongClick($('#forward'), 0.35, async () => {
+  while (_forward()) {
+    updateTimeStep(settings.get('time_step') * 1);
+    await timeout(20);
+  }
+});
+
+$('#forward_1').addEventListener('click', event => {
+  updateTimeStep(1);
+});
+const _forward_1 = createLongClick($('#forward_1'), 0.35, async () => {
+  while (_forward_1()) {
+    updateTimeStep(1);
+    await timeout(20);
+  }
+});
+
+$('#fullscreen').addEventListener('click', event => {
+  if (document.fullscreenElement === null) {
+    if (!outerContainer.requestFullscreen) showMessage('请求全屏失败');
+    outerContainer.requestFullscreen({ navigationUI: 'hide' })
+      .catch(err => {
+        showMessage('请求全屏失败');
+      });
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+//悬浮按钮
+
+const _speed = createLongClick(speed, 0.5, () => {
+  speed.addClass('fixed');
+});
+speed.addEventListener('click', event => {
+  sidebarBox.addClass('hidden');
+  changeSpeed.toggleClass('hidden');
+});
+speed.addEventListener('touchmove', event => {
+  event.preventDefault();
+  if (!_speed()) judgePos(event.touches[0].clientX, event.touches[0].clientY);
+});
+$('#sub_1').addEventListener('click', event => {
+  addSpeedRate(-0.5);
+});
+$('#sub').addEventListener('click', event => {
+  addSpeedRate(settings.get('speed_step') * -1);
+});
+$('#add').addEventListener('click', event => {
+  addSpeedRate(settings.get('speed_step') * 1);
+});
+$('#add_1').addEventListener('click', event => {
+  addSpeedRate(+0.5);
+});
+$('#speed_rate_reset').addEventListener('click', event => {
+  speedRate.innerText = '1';
+  setSpeedRate(1);
+});
+$('#speed_rate_close').addEventListener('click', event => {
+  changeSpeed.addClass('hidden');
+});
+
+$('#bookmarker').addEventListener('click', event => {
+  if (video.readyState === 0) return;
+  let data = bookmarks.get(video.name);
+  if (isNullish(data)) bookmarks.set(video.name, data = [], { expires: Time.week });
+  if (data.length >= 10) return showMessage('最多添加10个书签');
+  const time = video.currentTime;
+  if (data.lastIndexOf(time) >= 0) return showMessage('不可重复添加同一时间');
+  data.push(time);
+  bookmarks.set(video.name, data);
+  showMessage('书签添加成功\n' + Time.formatTimeFloat(time));
+});
+
+//视频遮罩层
+
+cover.addEventListener('touchend', event => {
+  changeSpeed.addClass('hidden');
+  stopSelectLoop();
+  sidebarBox.addClass('hidden');
+});
+
+/**
+ * ----------------
+ * 监听并处理各项事件
+ * ----------------
+ */
+
 window.addEventListener('resize', resize);
+window.addEventListener('load', resize);
+document.addEventListener('readystatechange', event => {
+  if (document.readyState === 'complete')
+    body.removeClass('no_transition');
+});
 document.addEventListener('fullscreenchange', event => {
   if (document.fullscreenElement === null) {
     outerContainer.removeClass('fullscreen');
@@ -610,16 +874,6 @@ document.addEventListener('fullscreenchange', event => {
     fullscreen_1.addClass('fa-compress');
     fullscreen_1.removeClass('fa-expand');
   }
-});
-
-progress.addEventListener('input', event => {
-  const past = video.currentTime;
-  const passed = progress.value / 1000 * video.duration - past;
-  current.innerText = `${Time.formatTimeFloat(past + passed)}`;
-  updateTime();
-});
-progress.addEventListener('change', event => {
-  video.currentTime = progress.value / 1000 * video.duration;
 });
 
 video.addEventListener('resize', resize);
@@ -647,6 +901,13 @@ video.addEventListener('play', event => {
   startCapture();
   progress.disabled = false;
 });
+video.addEventListener('pause', event => {
+  stoppedPlaying();
+});
+video.addEventListener('ended', event => {
+  endedPlaying();
+  progress.disabled = true;
+});
 video.addEventListener('timeupdate', event => {
   if (loop.start + loop.end > 0 && !outerContainer.hasClass('selecting_loop')) {
     const start = Math.min(loop.start, loop.end);
@@ -657,192 +918,61 @@ video.addEventListener('timeupdate', event => {
       video.currentTime = end;
     }
   }
-  progress.value = Math.floor(1000 * (video.currentTime / video.duration)) || 0;
+  if (!slidingProgress) progress.value = Math.floor(1000 * (video.currentTime / video.duration)) || 0;
   current.innerText = Time.formatTimeFloat(video.currentTime);
   drawFrame();
 });
-video.addEventListener('pause', event => {
-  stoppedPlaying();
-});
-video.addEventListener('ended', event => {
-  endedPlaying();
-  progress.disabled = true;
-});
 
-cover.addEventListener('touchstart', event => {
-  Hitsound.play();
-});
-cover.addEventListener('touchmove', event => {
-  event.preventDefault();
-});
-cover.addEventListener('click', event => {
-  changeSpeed.addClass('hidden');
-  stopSelectLoop();
-  bookmarkBox.addClass('hidden');
-});
+/**
+ * ----------------
+ * 定义和渲染设置项
+ * ----------------
+ */
 
-/*----------------*/
-
-play.addEventListener('click', async event => {
-  if (video.readyState === 0) return;
-  if (!video.paused) {
-    return await video.pause();
-  }
-  return await video.play();
-});
-uiLock.addEventListener('click', async event => {
-  if (uiLocked === true) {
-    uiLocked = false;
-    uiLock_1.addClass('fa-unlock');
-    uiLock_1.removeClass('fa-lock');
-    if (!video.paused) hideUI();
+const horizontal_mirror = new SettingItem.toggle({
+  container: $('#horizontal_mirror'),
+  text: '水平翻转',
+  checked: false
+}).render().onClick(async event => {
+  if (horizontal_mirror.checked) {
+    outerContainer.addClass('horizontal_mirrored');
   } else {
-    uiLocked = true;
-    uiLock_1.addClass('fa-lock');
-    uiLock_1.removeClass('fa-unlock');
+    outerContainer.removeClass('horizontal_mirrored');
   }
 });
-mute.addEventListener('click', event => {
-  if (video.volume < 1) {
-    video.volume = 1;
-    mute_1.addClass('fa-volume-up');
-    mute_1.removeClass('fa-volume-mute');
+
+const vertical_mirror = new SettingItem.toggle({
+  container: $('#vertical_mirror'),
+  text: '垂直翻转',
+  checked: false
+}).render().onClick(async event => {
+  if (vertical_mirror.checked) {
+    outerContainer.addClass('vertical_mirrored');
   } else {
-    video.volume = 0;
-    mute_1.addClass('fa-volume-mute');
-    mute_1.removeClass('fa-volume-up');
+    outerContainer.removeClass('vertical_mirrored');
   }
 });
-videoFile.addEventListener('click', event => {
-  videoFile.value = null;
-});
-videoFile.addEventListener('change', loadFile);
 
-speed.addEventListener('click', event => {
-  bookmarkBox.addClass('hidden');
-  changeSpeed.toggleClass('hidden');
-});
+const show_touch = new SettingItem.toggle({
+  container: $('#show_touch'),
+  text: '显示触点',
+  checked: false
+}).render();
 
-let longClickTimer;
-let isLongClicked = false;
-speed.addEventListener('touchstart', event => {
-  isLongClicked = false;
-  longClickTimer = setTimeout(() => {
-    speed.addClass('fixed');
-    clearTimeout(longClickTimer);
-    longClickTimer = null;
-    isLongClicked = true;
-  }, 0.5 * Time.second);
-});
-speed.addEventListener('touchend', event => {
-  if (longClickTimer) clearTimeout(longClickTimer);
-});
-speed.addEventListener('touchmove', event => {
-  event.preventDefault();
-  clearTimeout(longClickTimer);
-  longClickTimer = null;
-  if (!isLongClicked) judgePos(event.touches[0].clientX, event.touches[0].clientY);
-});
-
-fullscreen.addEventListener('click', event => {
-  if (document.fullscreenElement === null) {
-    outerContainer.requestFullscreen({ navigationUI: 'hide' })
-      .catch(err => {
-        showDialog('请求全屏失败');
-      });
+const play_mode = new SettingItem.toggle({
+  container: $('#play_mode'),
+  text: '播放模式',
+  valueMap: ['Canvas', 'Video'],
+  checked: false
+}).render().onClick(async event => {
+  if (play_mode.checked) {
+    container.appendChild(video);
   } else {
+    container.removeChild(video);
+  }
+  if (!isNullish(document.fullscreenElement))
     document.exitFullscreen();
-  }
 });
-
-$('#looper').addEventListener('click', event => {
-  if (video.readyState === 0) return;
-  changeSpeed.addClass('hidden');
-  bookmarkBox.addClass('hidden');
-  toggleSelectLoop();
-});
-$('#select_loop_box').addEventListener('click', event => {
-  const currentItem = $('#select_loop_box .selected');
-  if (currentItem.id === 'loop_start') {
-    loopStart.removeClass('selected');
-    loopEnd.addClass('selected');
-  } else {
-    loopEnd.removeClass('selected');
-    loopStart.addClass('selected');
-  }
-});
-
-$('#bookmarker').addEventListener('click', event => {
-  if (video.readyState === 0) return;
-  let data = bookmarks.get(video.name);
-  if (isNullish(data)) bookmarks.set(video.name, data = [], { expires: Time.week });
-  if (data.length >= 10) return showDialog('最多添加10个书签');
-  const time = video.currentTime;
-  if (data.lastIndexOf(time) >= 0) return showDialog('不可重复添加同一时间');
-  data.push(time);
-  bookmarks.set(video.name, data);
-  showDialog('书签添加成功\n' + Time.formatTimeFloat(time));
-});
-$('#close_bookmark_box').addEventListener('click', event => {
-  bookmarkBox.addClass('hidden');
-});
-$('#show_bookmarks').addEventListener('click', event => {
-  changeSpeed.addClass('hidden');
-  stopSelectLoop();
-  bookmarkBox.toggleClass('hidden');
-  loadBookmarks();
-});
-
-/*----------------*/
-
-$('#backward_2').addEventListener('click', event => {
-  video.currentTime = 0;
-});
-$('#backward_1').addEventListener('click', event => {
-  updateTimeStep(-1);
-});
-$('#backward').addEventListener('click', event => {
-  updateTimeStep(settings.get('time_step') * -1);
-});
-$('#forward').addEventListener('click', event => {
-  updateTimeStep(settings.get('time_step') * 1);
-});
-$('#forward_1').addEventListener('click', event => {
-  updateTimeStep(1);
-});
-
-$('#sub_1').addEventListener('click', event => {
-  addSpeedRate(-0.5);
-});
-$('#sub').addEventListener('click', event => {
-  addSpeedRate(settings.get('speed_step') * -1);
-});
-$('#add').addEventListener('click', event => {
-  addSpeedRate(settings.get('speed_step') * 1);
-});
-$('#add_1').addEventListener('click', event => {
-  addSpeedRate(+0.5);
-});
-
-$('#speed_rate_reset').addEventListener('click', event => {
-  speedRate.innerText = '1';
-  setSpeedRate(1);
-});
-$('#speed_rate_close').addEventListener('click', event => {
-  changeSpeed.addClass('hidden');
-});
-
-$('#loop_add').addEventListener('click', event => {
-  setLoop(video.currentTime);
-});
-$('#loop_reset').addEventListener('click', event => {
-  resetLoop();
-});
-$('#loop_close').addEventListener('click', event => {
-  stopSelectLoop();
-});
-
-/*----------------*/
 
 const time_step = new SettingItem.range({
   container: $('#time_step'),
@@ -861,44 +991,137 @@ const speed_step = new SettingItem.range({
 const ui_offset = new SettingItem.range({
   container: $('#ui_offset'),
   text: 'UI边界偏移：$1%',
-  help: '屏幕宽高比大于视频宽高比时，UI左右两侧边距占屏幕宽度超出视频宽度部分的百分比。',
+  help: '屏幕宽高比大于视频宽高比时，UI左右两侧边距占屏幕宽度超出视频宽度部分的百分比',
   min: 0,
   max: 100,
   value: 100
 }).render().onInput(event => {
-  setMargin(`calc(var(--padding) + (${outerContainer.offsetWidth}px - ${container.style.width}) / 2 * ${settings.get('ui_offset') / 100})`);
+  setMargin(`calc(var(--ui-spacing) + (${outerContainer.offsetWidth}px - ${container.style.width}) / 2 * ${settings.get('ui_offset') / 100})`);
   judgePos();
 });
 
-/*const show_touch = new SettingItem.toggle({
-  container: $('#show_touch'),
-  text: '显示触摸位置：',
-  valueMap: ['关闭', '开启'],
-  checked: false
-}).render().onClick(async event => {});*/
-
-const play_mode = new SettingItem.toggle({
-  container: $('#play_mode'),
-  text: '视频播放模式：$1',
-  buttonText: '切换',
-  help: 'Canvas：使用HTML5 <canvas>元素代理视频播放\nVideo：直接显示原视频画面',
-  valueMap: ['Canvas', 'Video'],
+const dark_mode = new SettingItem.toggle({
+  container: $('#dark_mode'),
+  text: '深色模式：',
   checked: false
 }).render().onClick(async event => {
-  if (play_mode.checked) {
-    container.appendChild(video);
-  } else {
-    container.removeChild(video);
+  !!settings.get('dark_mode') ?
+    body.addClass('dark_mode') :
+    body.removeClass('dark_mode');
+}, true);
+
+/**
+ * ----------------
+ * 触点显示功能
+ * ----------------
+ */
+
+const touches = [];
+
+const findIndex = id => {
+  for (const i in touches) {
+    if (touches[i].id === id) return i;
   }
-});
+  return -1;
+}
+const findTouch = id => {
+  for (const touch of touches) {
+    if (touch.id === id) return touch;
+  }
+  return null;
+}
+const clearTouch = debounce(() => {
+  if (isNullish($('#cover i:not(.removed)')))
+    cover.innerHTML = '';
+}, 0.2 * Time.second);
 
-/*----------------*/
+const addTouch = event => {
+  event.preventDefault();
 
-$('#updates').addEventListener('click', event => {
-  alert('v1.3.0' +
-    '\n1. 重做了页面UI， 为播放器加入了过渡动画；' +
-    '\n2. 增加了书签功能， 可以为每个视频单独保存最多10个时间点（ 以文件名作为标识）；' +
-    '\n3. 增加了UI锁定功能， 锁定后可以在不隐藏播放器UI的情况下播放视频；' +
-    '\n4. 重做了UI边界偏移（ 现在以屏幕和视频的宽高比为准）；' +
-    '\n5. 增加了视频播放模式选项以适配不同的浏览器。');
+  if (!settings.get('show_touch')) return;
+  for (const touch of event.changedTouches) {
+    touches.push(new TouchPoint(touch.identifier, touch.pageX, touch.pageY));
+  }
+}
+const moveTouch = event => {
+  event.preventDefault();
+
+  for (const touch of event.changedTouches) {
+    const _touch = findTouch(touch.identifier);
+    if (isNullish(_touch) || _touch.removed) continue;
+    _touch.setX(touch.pageX);
+    _touch.setY(touch.pageY);
+  }
+}
+const removeTouch = event => {
+  event.preventDefault();
+
+  for (const touch of event.changedTouches) {
+    const _touch = findTouch(touch.identifier);
+    if (isNullish(_touch) || _touch.removed) continue;
+    touches.splice(findIndex(_touch.id), 1);
+    _touch.remove();
+  }
+  clearTouch();
+}
+
+cover.addEventListener('touchstart', addTouch);
+cover.addEventListener('touchmove', moveTouch);
+cover.addEventListener('touchend', removeTouch);
+cover.addEventListener('touchcancel', removeTouch);
+
+/**
+ * ----------------
+ * 自定义打击音功能
+ * ----------------
+ */
+
+const hitsound = $('#hitsound');
+const selectHitsound = $('#select_hitsound');
+const audioContext = new window.AudioContext();
+let audioBuffer;
+let audioSource;
+
+const Hitsound = {
+  decode: arrayBuffer =>
+    new Promise((resolve, reject) => {
+      audioContext.decodeAudioData(arrayBuffer, buffer => {
+        resolve(buffer);
+      }, err => {
+        showDialog('音频解码失败');
+        reject();
+      });
+    }),
+  load: event => {
+    const file = event.target.files[0];
+    if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
+      showDialog('只支持MP3、OGG和WAV格式的音频');
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.addEventListener('load', async e => {
+      audioBuffer = await Hitsound.decode(e.target.result);
+      selectHitsound.innerText = file.name.length >= 8 ? file.name.slice(0, 5) + '...' : file.name;
+    });
+  },
+  play: () => {
+    if (!audioBuffer) return;
+    audioSource = audioContext.createBufferSource();
+    audioSource.buffer = audioBuffer;
+    audioSource.connect(audioContext.destination);
+    audioSource.start(0);
+  },
+  clear: () => {
+    audioSource.stop();
+    audioBuffer = audioSource = null;
+    selectHitsound.innerText = '选择';
+  }
+}
+
+hitsound.addEventListener('click', event => {
+  hitsound.value = null;
 });
+hitsound.addEventListener('change', Hitsound.load);
+$('#clear_hitsound').addEventListener('click', Hitsound.clear);
+cover.addEventListener('touchstart', Hitsound.play);
