@@ -594,7 +594,7 @@ main,
   display: -webkit-box !important;
   display: -ms-flexbox !important;
   display: flex !important;
-  right: -40%;
+  right: calc(((100% - var(--margin)) * 0.35 + var(--margin)) * -1);
 }
 
 #play {
