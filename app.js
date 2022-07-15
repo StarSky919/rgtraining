@@ -8,6 +8,8 @@ cookie.remove('ui_offset');
  * ----------------
  */
 
+const VERSION = [1, 4, 1];
+
 window.AudioContext =
   AudioContext ||
   webkitAudioContext ||
@@ -56,6 +58,7 @@ const loop = {
 const settings = new Datastore('$');
 const bookmarks = new Datastore('&');
 
+$('.version').exec(function() { this.innerText = `v${VERSION.join('.')}` });
 if (!settings.get('play_mode')) container.removeChild(video);
 
 /**
@@ -204,7 +207,6 @@ const SettingItem = {
       this.#init();
       const value = settings.get(this.id);
       this.value = isNullish(value) ? settings.set(this.id, this.value, { fallback: this.value, expires: Time.week }) : parseFloat(value);
-      this.input.dispatchEvent(new Event('input'));
     }
 
     #init() {
@@ -250,12 +252,6 @@ const SettingItem = {
       return this;
     }
 
-    onChange(callback, init) {
-      this.input.addEventListener('change', callback.bind(this));
-      if (init) callback.call(this);
-      return this;
-    }
-
     onHelpClick(callback) {
       this.#helpClickCallback = callback.bind(this);
       return this;
@@ -273,9 +269,11 @@ const SettingItem = {
       const { valueMap } = this.options;
       if (isNullish(valueMap)) {
         this.input.value = isNullish(value) ? this.input.min : value;
+        this.input.dispatchEvent(new Event('input'));
         return;
       }
       this.input.value = valueMap.lastIndexOf(isNullish(value) ? 0 : value);
+      this.input.dispatchEvent(new Event('input'));
     }
 
     render() {
@@ -315,11 +313,11 @@ const showDialog = async (msg, title = '信息') => {
   const dialogs = $('body>.dialog');
   const dialogCount = isNullish(dialogs) ? 0 : dialogs.length;
   const cover = createElement('div');
-  cover.addClass('box_cover', 'hidden');
-  cover.style.zIndex = 9921 + dialogCount;
+  cover.addClass('box_cover', 'dialog', 'hidden');
+  cover.style.zIndex = 9930 + dialogCount;
   const dialog = createElement('div');
   dialog.addClass('box_container', 'dialog');
-  dialog.style.zIndex = 9922 + dialogCount;
+  dialog.style.zIndex = 9931 + dialogCount;
   const tab = createElement('div');
   tab.addClass('tab');
   const _title = createElement('label'),
@@ -370,6 +368,7 @@ const showMessage = (msg, delay = 2) => {
 }
 
 const setIconSize = size => {
+  body.style.setProperty('--tp-size', size * 2 + 'rem');
   outerContainer.style.setProperty('--ui-spacing', size * 0.85 + 'em');
   outerContainer.style.setProperty('--font-size', size * 1.65 + 'rem');
 }
@@ -562,6 +561,7 @@ const loadBookmarks = () => {
       const jumpToTime = createElement('i');
       jumpToTime.addClass('fas', 'fa-location-arrow');
       jumpToTime.addEventListener('click', async event => {
+        if (!!video.ended) return;
         video.currentTime = time;
         await video.play();
       });
@@ -591,21 +591,21 @@ const loadBookmarks = () => {
 
 const updateTimeStep = (() => {
   let time = 0;
+  let timePassed = 0;
   let timeout;
   return value => {
     if (video.readyState === 0 || video.ended) return;
-    if (video.currentTime + time > video.duration || video.currentTime + time < 0) return;
     time += value;
-    showMessage(`${Time.formatTimeFloat(video.currentTime + time)}\n${time >= 0 ? `+${time.toFixed(3)}` : time.toFixed(3)}秒`, 1);
+    const timeUpdated = video.currentTime + time;
+    if (timeUpdated < 0) {
+      time += 0 - timeUpdated;
+    } else if (timeUpdated >= video.duration) {
+      time += video.duration - timeUpdated;
+    }
+    showMessage(`${Time.formatTimeFloat(timeUpdated < 0 ? 0 : timeUpdated > video.duration ? video.duration : timeUpdated)}\n${time >= 0 ? `+${time.toFixed(3)}` : time.toFixed(3)}秒`, 1);
     clearTimeout(timeout);
     timeout = setTimeout(() => {
-      if (video.currentTime + time <= 0) {
-        video.currentTime = 0;
-      } else if (video.currentTime + time >= video.duration) {
-        video.currentTime = video.duration;
-      } else {
-        video.currentTime += time;
-      }
+      video.currentTime += time;
       clearTimeout(timeout);
       time = 0;
       timeout = null;
@@ -614,15 +614,15 @@ const updateTimeStep = (() => {
 })();
 
 const setSpeedRate = value => {
-  if (video.readyState === 0) return;
-  video.playbackRate = parseFloat(value);
+  video.playbackRate = value;
+  speedRate.innerHTML = value;
 }
 
 const addSpeedRate = value => {
-  speedRate.innerText = Math.round(speedRate.innerText * 100 + value * 100) / 100;
-  if (speedRate.innerText < 0.2) speedRate.innerText = 0.2;
-  if (speedRate.innerText > 2) speedRate.innerText = 2;
-  setSpeedRate(speedRate.innerText);
+  let rate = Math.round(video.playbackRate * 100 + value * 100) / 100;
+  if (rate < 0.2) rate = 0.2;
+  if (rate > 2) rate = 2;
+  setSpeedRate(rate);
 }
 
 /**
@@ -669,10 +669,6 @@ videoFile.addEventListener('click', event => {
 });
 videoFile.addEventListener('change', event => {
   const file = event.target.files[0];
-  if (!['mp4'].includes(file.name.slice(-3))) {
-    showDialog('目前只支持MP4格式的视频');
-    return;
-  }
   outerMessage.innerText = '当前文件：\n' + file.name;
   const reader = new FileReader();
   reader.readAsArrayBuffer(file);
@@ -686,7 +682,7 @@ videoFile.addEventListener('change', event => {
 });
 
 $('#looper').addEventListener('click', event => {
-  if (video.readyState === 0) return;
+  if (video.readyState === 0 || video.ended) return;
   changeSpeed.addClass('hidden');
   sidebarBox.addClass('hidden');
   toggleSelectLoop();
@@ -732,7 +728,7 @@ $('#clear_all_bookmarks').addEventListener('click', event => {
 //底部控制栏
 
 $('#backward_2').addEventListener('click', event => {
-  video.currentTime = 0;
+  if (video.readyState !== 0 && !video.ended) video.currentTime = 0;
 });
 
 $('#backward_1').addEventListener('click', event => {
@@ -749,7 +745,7 @@ $('#backward').addEventListener('click', event => {
   updateTimeStep(settings.get('time_step') * -1);
 });
 const _backward = createLongClick($('#backward'), 0.35, async () => {
-  while (_backward) {
+  while (_backward()) {
     updateTimeStep(settings.get('time_step') * -1);
     await timeout(20);
   }
@@ -805,6 +801,7 @@ const _speed = createLongClick(speed, 0.5, () => {
   speed.addClass('fixed');
 });
 speed.addEventListener('click', event => {
+  if (video.readyState === 0 || video.ended) return;
   sidebarBox.addClass('hidden');
   changeSpeed.toggleClass('hidden');
 });
@@ -825,7 +822,6 @@ $('#add_1').addEventListener('click', event => {
   addSpeedRate(+0.5);
 });
 $('#speed_rate_reset').addEventListener('click', event => {
-  speedRate.innerText = '1';
   setSpeedRate(1);
 });
 $('#speed_rate_close').addEventListener('click', event => {
@@ -833,7 +829,7 @@ $('#speed_rate_close').addEventListener('click', event => {
 });
 
 $('#bookmarker').addEventListener('click', event => {
-  if (video.readyState === 0) return;
+  if (video.readyState === 0 || video.ended) return;
   let data = bookmarks.get(video.name);
   if (isNullish(data)) bookmarks.set(video.name, data = [], { expires: Time.week });
   if (data.length >= 10) return showMessage('最多添加10个书签');
@@ -892,7 +888,7 @@ video.addEventListener('loadeddata', event => {
   total.innerText = Time.formatTimeFloat(time);
   loadBookmarks();
   video.currentTime = 0;
-  addSpeedRate(0);
+  setSpeedRate(1);
   preparePlaying();
   drawFrame();
 });
@@ -933,29 +929,31 @@ const horizontal_mirror = new SettingItem.toggle({
   container: $('#horizontal_mirror'),
   text: '水平翻转',
   checked: false
-}).render().onClick(async event => {
+}).render();
+horizontal_mirror.onClick(async event => {
   if (horizontal_mirror.checked) {
     outerContainer.addClass('horizontal_mirrored');
   } else {
     outerContainer.removeClass('horizontal_mirrored');
   }
-});
+}, true);
 
 const vertical_mirror = new SettingItem.toggle({
   container: $('#vertical_mirror'),
   text: '垂直翻转',
   checked: false
-}).render().onClick(async event => {
+}).render();
+vertical_mirror.onClick(async event => {
   if (vertical_mirror.checked) {
     outerContainer.addClass('vertical_mirrored');
   } else {
     outerContainer.removeClass('vertical_mirrored');
   }
-});
+}, true);
 
 const show_touch = new SettingItem.toggle({
   container: $('#show_touch'),
-  text: '显示触点',
+  text: '显示触点：',
   checked: false
 }).render();
 
@@ -1009,6 +1007,15 @@ const dark_mode = new SettingItem.toggle({
     body.addClass('dark_mode') :
     body.removeClass('dark_mode');
 }, true);
+
+$('#reset_all').addEventListener('click', async event => {
+  settings.clear();
+  showDialog('所有设置已重置，即将刷新页面……\n（如果页面没有反应请手动刷新）');
+  await timeout(1 * Time.second);
+  location.reload();
+  await timeout(1 * Time.second);
+  location.href = location.href;
+});
 
 /**
  * ----------------
@@ -1070,6 +1077,64 @@ cover.addEventListener('touchmove', moveTouch);
 cover.addEventListener('touchend', removeTouch);
 cover.addEventListener('touchcancel', removeTouch);
 
+const touchpoint_red = new SettingItem.range({
+  container: $('#touchpoint_red'),
+  text: '红色量：$1',
+  min: 0,
+  max: 255,
+  value: 255
+}).render().onInput(function() {
+  body.style.setProperty('--tp-color-r', this.value);
+}, true);
+
+const touchpoint_green = new SettingItem.range({
+  container: $('#touchpoint_green'),
+  text: '绿色量：$1',
+  min: 0,
+  max: 255,
+  value: 255
+}).render().onInput(function() {
+  body.style.setProperty('--tp-color-g', this.value);
+}, true);
+
+const touchpoint_blue = new SettingItem.range({
+  container: $('#touchpoint_blue'),
+  text: '蓝色量：$1',
+  min: 0,
+  max: 255,
+  value: 255
+}).render().onInput(function() {
+  body.style.setProperty('--tp-color-b', this.value);
+}, true);
+
+const touchpoint_alpha = new SettingItem.range({
+  container: $('#touchpoint_alpha'),
+  text: '透明度：$1%',
+  min: 0,
+  max: 100,
+  value: 75
+}).render().onInput(function() {
+  body.style.setProperty('--tp-alpha', this.value / 100);
+}, true);
+
+const touchpoint_scale = new SettingItem.range({
+  container: $('#touchpoint_scale'),
+  text: '触点大小：$1%',
+  min: 100,
+  max: 200,
+  value: 100
+}).render().onInput(function() {
+  body.style.setProperty('--tp-scale', this.value / 100);
+}, true);
+
+$('#touchpoint_reset').addEventListener('click', event => {
+  touchpoint_red.value = 255;
+  touchpoint_green.value = 255;
+  touchpoint_blue.value = 255;
+  touchpoint_alpha.value = 75;
+  touchpoint_scale.value = 100;
+});
+
 /**
  * ----------------
  * 自定义打击音功能
@@ -1094,10 +1159,6 @@ const Hitsound = {
     }),
   load: event => {
     const file = event.target.files[0];
-    if (!['mp3', 'ogg', 'wav'].includes(file.name.slice(-3))) {
-      showDialog('只支持MP3、OGG和WAV格式的音频');
-      return;
-    }
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
     reader.addEventListener('load', async e => {

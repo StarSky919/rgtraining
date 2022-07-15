@@ -21,7 +21,7 @@
       <strong class="title">音乐游戏培训</strong>
     </span>
     <span>
-      <small class="version">v1.4.0</small>
+      <small class="version">v1.4.5</small>
     </span>
   </nav>
   <main>
@@ -70,7 +70,6 @@
         <div id="video_settings">
           <div id="horizontal_mirror"></div>
           <div id="vertical_mirror"></div>
-          <div id="show_touch"></div>
           <div id="play_mode"></div>
         </div>
         <div class="title"><span>书签列表</span><i id="clear_all_bookmarks" class="fas fa-ban"></i></div>
@@ -105,9 +104,9 @@
     <hr />
     <p>RGTraining © 2022 StarSky919</p>
   </main>
-  <input type="radio" name="tabs" id="tab_5" checked />
+  <input type="radio" name="tabs" id="tab_5" class="hide_cover" checked />
   <label for="tab_5" class="box_cover"></label>
-  <input type="radio" name="tabs" id="tab_1" />
+  <input type="radio" name="tabs" id="tab_1" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
       <label for="tab_1">设置</label>
@@ -117,6 +116,11 @@
       <div id="time_step"></div>
       <div id="speed_step"></div>
       <div id="ui_offset"></div>
+      <div id="show_touch"></div>
+      <div class="setting_item">
+        <span>触点样式：</span>
+        <label for="tp_1" class="button">编辑</label>
+      </div>
       <div class="setting_item">
         <span>自定义打击音：</span>
         <span>
@@ -126,9 +130,34 @@
         </span>
       </div>
       <div id="dark_mode"></div>
+      <div class="setting_item">
+        <span>重置全部设置：</span>
+        <span id="reset_all" class="button">重置</span>
+      </div>
     </div>
   </div>
-  <input type="radio" name="tabs" id="tab_2" />
+  <input type="radio" name="touchpoint" id="tp_2" class="hide_cover" checked />
+  <label for="tp_2" class="box_cover"></label>
+  <input type="radio" name="touchpoint" id="tp_1" class="show_dialogs" />
+  <div class="box_container">
+    <div class="tab">
+      <label for="tp_1">触点样式</label>
+      <label for="tp_2" class="close_box fas fa-times"></label>
+    </div>
+    <div class="box">
+      <p class="touchpoint_preview"><i></i></p>
+      <div id="touchpoint_red"></div>
+      <div id="touchpoint_green"></div>
+      <div id="touchpoint_blue"></div>
+      <div id="touchpoint_alpha"></div>
+      <div id="touchpoint_scale"></div>
+      <div class="setting_item">
+        <span>重置触点样式：</span>
+        <span id="touchpoint_reset" class="button">重置</span>
+      </div>
+    </div>
+  </div>
+  <input type="radio" name="tabs" id="tab_2" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
       <label for="tab_2">FAQ</label>
@@ -149,13 +178,18 @@
       <p>A：在未加载任何视频时打开书签列表，就能看到所有已添加书签的视频，可以进行删除。</p>
     </div>
   </div>
-  <input type="radio" name="tabs" id="tab_3" />
+  <input type="radio" name="tabs" id="tab_3" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
       <label for="tab_3">更新日志</label>
       <label for="tab_5" class="close_box fas fa-times"></label>
     </div>
     <div class="box">
+      <h2 class="ul">1.4.1</h2>
+      <p>1.支持自定义触点样式；</p>
+      <p>2.更新了倍速调整功能的操作逻辑；</p>
+      <p>3.修复了跳转视频时间时提示文本的错误；</p>
+      <p>4.修复了按钮“<i class="fas fa-angle-left"></i>”长按后松手不会停止快退的Bug。</p>
       <h2 class="ul">1.4.0</h2>
       <p>1.重新设计了整个页面，优化过渡动画；</p>
       <p>2.增加了触点显示功能；</p>
@@ -184,7 +218,7 @@
       <p>1.初始版本。</p>
     </div>
   </div>
-  <input type="radio" name="tabs" id="tab_4" />
+  <input type="radio" name="tabs" id="tab_4" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
       <label for="tab_4">关于</label>
@@ -195,7 +229,7 @@
       <p>设计灵感来源于苹果设备上的<a href="https://apps.apple.com/cn/app/id1088874473" target="_blank">音乐游戏培训</a>，目的是让苹果设备以外的音游玩家也能用到类似的软件。</p>
       <p>选择一个音游录屏或手元视频即可开始使用。</p>
       <hr />
-      <p>版本：v1.4.0</p>
+      <p>版本：<span class="version"></span></p>
       <p>作者：StarSky919</p>
       <p>网址：<a href="https://rgtraining.starsky919.xyz/" target="_blank"></a></p>
       <p>项目地址：<a href="https://github.com/StarSky919/rgtraining" target="_blank">StarSky919/rgtraining</a>（GitHub）</p>
@@ -215,7 +249,7 @@
     var _hmt = _hmt || [];
     (function() {
       var hm = document.createElement("script");
-      //hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
+      hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
       var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
