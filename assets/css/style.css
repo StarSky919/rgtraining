@@ -12,7 +12,7 @@ input[type=file] {
   display: none;
 }
 
-noscript {
+.warning {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -35,7 +35,7 @@ noscript {
   z-index: 9999;
 }
 
-noscript p {
+.warning p {
   max-width: 75vw;
 }
 
@@ -184,6 +184,26 @@ body.dark_mode {
   --text-color: #F0F0F0;
   --background-color: #1A1A1A;
   --dialog-background: #252525;
+}
+
+.hidden_2 {
+  display: none;
+}
+
+body[s-lang=zh] #about_zh {
+  display: initial !important;
+}
+
+body[s-lang=en] #about_en {
+  display: initial !important;
+}
+
+.tips_en {
+  display: none;
+}
+
+body[s-lang=en] .tips_en {
+  display: initial !important;
 }
 
 .fas::before {
@@ -382,20 +402,20 @@ main,
   z-index: 919;
 }
 
-#outer_container.horizontal_mirrored #video,
-#outer_container.horizontal_mirrored #canvas {
+#outer_container.horizontal_flipped #video,
+#outer_container.horizontal_flipped #canvas {
   -webkit-transform: rotateY(180deg);
   transform: rotateY(180deg);
 }
 
-#outer_container.vertical_mirrored #video,
-#outer_container.vertical_mirrored #canvas {
+#outer_container.vertical_flipped #video,
+#outer_container.vertical_flipped #canvas {
   -webkit-transform: rotateX(180deg);
   transform: rotateX(180deg);
 }
 
-#outer_container.horizontal_mirrored.vertical_mirrored #video,
-#outer_container.horizontal_mirrored.vertical_mirrored #canvas {
+#outer_container.horizontal_flipped.vertical_flipped #video,
+#outer_container.horizontal_flipped.vertical_flipped #canvas {
   -webkit-transform: rotateX(180deg) rotateY(180deg);
   transform: rotateX(180deg) rotateY(180deg);
 }
@@ -520,6 +540,9 @@ main,
   margin-bottom: calc(var(--ui-spacing) / 1.25);
   align-items: center;
   font-size: 0.9em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 #sidebar_box .title:not(:first-of-type) {
@@ -529,6 +552,13 @@ main,
 #video_settings .setting_item {
   margin: 0;
   font-size: 0.75em;
+  overflow: hidden;
+}
+
+#video_settings .setting_item span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 #video_settings .setting_item:not(:last-of-type) {

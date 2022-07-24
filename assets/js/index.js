@@ -73,14 +73,14 @@ Node.prototype.removeAttr = function(name) {
   return this;
 }
 
-Node.prototype.exec = function(callback) {
-  callback.call(this, 0);
+Node.prototype.forEach = function(callback) {
+  callback.call(this, this, 0);
   return this;
 }
 
-NodeList.prototype.exec = function(callback) {
-  for (let [index, elem] of this.entries()) {
-    callback.call(elem, index);
+NodeList.prototype.forEach = function(callback) {
+  for (let [index, elm] of this.entries()) {
+    callback.call(elm, elm, index);
   }
   return this;
 }

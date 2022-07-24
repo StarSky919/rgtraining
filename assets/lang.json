@@ -1,0 +1,112 @@
+{
+  "zh": {
+    "title": "音乐游戏培训",
+    "message": {
+      "tips_1": "点击“",
+      "tips_2": "”来选择一个视频文件",
+      "audio_decoding_failed": "音频解码失败",
+      "fullscreen_failed": "请求全屏失败",
+      "bookmark_1": "最多添加10个书签",
+      "bookmark_2": "书签已存在",
+      "bookmark_3": "书签添加成功",
+      "language": "您可以随时在设置里更改语言",
+      "reset_all_settings": "所有设置已重置，即将刷新页面……\n（如果页面没有反应请手动刷新）",
+      "ui_offset": "屏幕宽高比大于视频宽高比时，UI左右两侧边距占屏幕宽度超出视频宽度部分的百分比"
+    },
+    "ui": {
+      "current_file": "当前文件：",
+      "message": "信息",
+      "speed_rate": "播放速度",
+      "loop": "选段循环",
+      "video_settings": "视频设置",
+      "bookmarks": "书签列表",
+      "nothing": "空空如也",
+      "settings": "设置",
+      "faq": "常见问题",
+      "updates": "更新日志",
+      "about": "关于"
+    },
+    "settings": {
+      "open": "开启",
+      "close": "关闭",
+      "select": "选择",
+      "clear": "清除",
+      "edit": "编辑",
+      "reset": "重置",
+      "time_step": "时间调整步长：$1s",
+      "speed_step": "倍速调整步长：$1x",
+      "ui_offset": "UI边界偏移：$1%",
+      "touchpoint": {
+        "show": "触点显示",
+        "style": "触点样式",
+        "red": "红色量：$1",
+        "green": "绿色量：$1",
+        "blue": "蓝色量：$1",
+        "alpha": "透明度：$1%",
+        "size": "触点大小：$1%",
+        "reset": "重置样式"
+      },
+      "hitsound": "自定义打击音",
+      "dark_mode": "深色模式",
+      "reset_all": "重置全部设置",
+      "hflip": "水平翻转",
+      "vflip": "垂直翻转",
+      "play_mode": "播放模式"
+    }
+  },
+  "en": {
+    "title": "Rhythm Game Training",
+    "message": {
+      "tips_1": "Click \"",
+      "tips_2": "\" to select a video file",
+      "audio_decoding_failed": "Audio decoding failed",
+      "fullscreen_failed": "Request fullscreen failed",
+      "bookmark_1": "",
+      "bookmark_2": "The bookmark is already exists",
+      "bookmark_3": "Bookmark added",
+      "language": "You can switch the language in the settings at any time",
+      "reset_all_settings": "All the settings are reset, refreshing page...\n(If no response, please refresh it manually)",
+      "ui_offset": "(Translated by DeepL)\nWhen the screen aspect ratio is larger than the video aspect ratio, the percentage of UI margin to the part of the screen width that exceeds video width"
+    },
+    "ui": {
+      "current_file": "Current file:",
+      "message": "Message",
+      "speed_rate": "Play speed",
+      "loop": "A-B Loop",
+      "video_settings": "Settings",
+      "bookmarks": "Bookmarks",
+      "nothing": "Empty",
+      "settings": "Settings",
+      "faq": "FAQ",
+      "updates": "Updates",
+      "about": "About"
+    },
+    "settings": {
+      "open": "On",
+      "close": "Off",
+      "select": "Select",
+      "clear": "Clear",
+      "edit": "Edit",
+      "reset": "Reset",
+      "time_step": "Time-adjust step: $1s",
+      "speed_step": "Speed-adjust step: $1x",
+      "ui_offset": "UI margin: $1%",
+      "touchpoint": {
+        "show": "Show Touchpoint",
+        "style": "Touchpoint style",
+        "red": "Red: $1",
+        "green": "Green: $1",
+        "blue": "Blue: $1",
+        "alpha": "Alpha: $1%",
+        "size": "Size: $1%",
+        "reset": "Reset style"
+      },
+      "hitsound": "Custom hitsound",
+      "dark_mode": "Dark mode",
+      "reset_all": "Reset all settings",
+      "hflip": "Horizontal Flip",
+      "vflip": "Vertical Flip",
+      "play_mode": "Play mode"
+    }
+  }
+}

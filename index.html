@@ -9,23 +9,24 @@
   <link rel="icon" href="assets/images/logo.ico" type="image/x-icon" />
   <link rel="shortcut icon" href="assets/images/logo.ico" type="image/x-icon" />
   <link rel="stylesheet" href="assets/css/style.css" type="text/css" />
-  <title>音乐游戏培训</title>
+  <title></title>
 </head>
 
 <body class="no_transition">
-  <noscript>
-    <p id="warning">您的浏览器未启用或不支持JavaScript，无法使用本网站。</p>
+  <noscript class="warning">
+    <p>您的浏览器未启用或不支持JavaScript，无法使用本网站。</p>
+    <p>Your browser isn't enabled or doesn't support JavaScript. Please check and try again.</p>
   </noscript>
   <nav>
     <span>
-      <strong class="title">音乐游戏培训</strong>
+      <strong class="title" s-i18n="title"></strong>
     </span>
     <span>
-      <small class="version">v1.4.5</small>
+      <small class="version"></small>
     </span>
   </nav>
   <main>
-    <p id="outer_message">点击“<i class="fas fa-file"></i>”来选择一个视频文件</p>
+    <p id="outer_message"><span s-i18n="message.tips_1"></span><i class="fas fa-file"></i><span s-i18n="message.tips_2"></span></p>
     <div id="outer_container">
       <div id="play" class="always"><i id="play_1" class="fas fa-play"></i></div>
       <div id="speed" class="always fixed"><i class="fas fa-tachometer-alt"></i></div>
@@ -53,7 +54,7 @@
       </div>
       <div id="message" class="message always hidden"></div>
       <div id="select_loop" class="message always hidden">
-        <div>选段循环</div>
+        <div s-i18n="ui.loop"></div>
         <div id="select_loop_box" class="box_1">
           <span id="loop_start" class="selected">00:00.000</span>
           <span>~</span>
@@ -66,17 +67,17 @@
         </div>
       </div>
       <div id="sidebar_box" class="always hidden">
-        <div class="title"><span>视频设置</span><i id="close_sidebar_box" class="fas fa-times"></i></div>
+        <div class="title"><span s-i18n="ui.video_settings"></span><i id="close_sidebar_box" class="fas fa-times"></i></div>
         <div id="video_settings">
-          <div id="horizontal_mirror"></div>
-          <div id="vertical_mirror"></div>
-          <div id="play_mode"></div>
+          <div id="horizontal_flip"></div>
+          <div id="vertical_flip"></div>
+          <div id="show_touch"></div>
         </div>
-        <div class="title"><span>书签列表</span><i id="clear_all_bookmarks" class="fas fa-ban"></i></div>
-        <div id="bookmark_list"><span>空空如也</span></div>
+        <div class="title"><span s-i18n="ui.bookmarks"></span><i id="clear_all_bookmarks" class="fas fa-ban"></i></div>
+        <div id="bookmark_list"><span s-i18n="ui.nothing"></span></div>
       </div>
       <div id="change_speed" class="message always hidden">
-        <div>设置倍速</div>
+        <div s-i18n="ui.speed_rate"></div>
         <div class="box_1">
           <span id="sub_1"><i class="fas fa-angle-double-left"></i></span>
           <span id="sub"><i class="fas fa-angle-left"></i></span>
@@ -92,14 +93,14 @@
       <div id="cover" class="always"></div>
       <div id="container" class="always">
         <canvas id="canvas"></canvas>
-        <video id="video"></video>
+        <video id="video"> </video>
       </div>
     </div>
     <div id="buttons_box">
-      <label for="tab_1" class="button">设置</label>
-      <label for="tab_2" class="button">FAQ</label>
-      <label for="tab_3" class="button">更新日志</label>
-      <label for="tab_4" class="button">关于</label>
+      <label for="tab_1" class="button" s-i18n="ui.settings"></label>
+      <label for="tab_2" class="button" s-i18n="ui.faq"></label>
+      <label for="tab_3" class="button" s-i18n="ui.updates"></label>
+      <label for="tab_4" class="button" s-i18n="ui.about"></label>
     </div>
     <hr />
     <p>RGTraining © 2022 StarSky919</p>
@@ -109,39 +110,41 @@
   <input type="radio" name="tabs" id="tab_1" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
-      <label for="tab_1">设置</label>
+      <label for="tab_1" s-i18n="ui.settings"></label>
       <label for="tab_5" class="close_box fas fa-times"></label>
     </div>
     <div class="box">
       <div id="time_step"></div>
       <div id="speed_step"></div>
       <div id="ui_offset"></div>
-      <div id="show_touch"></div>
+      <div id="play_mode"></div>
       <div class="setting_item">
-        <span>触点样式：</span>
-        <label for="tp_1" class="button">编辑</label>
+        <span s-i18n="settings.touchpoint.style"></span>
+        <label for="tp_1" class="button" s-i18n="settings.edit"></label>
       </div>
       <div class="setting_item">
-        <span>自定义打击音：</span>
+        <span s-i18n="settings.hitsound"></span>
         <span>
           <input type="file" id="hitsound" accept="audio/*">
-          <label id="select_hitsound" class="button" for="hitsound">选择</label>
-          <span id="clear_hitsound" class="button">清除</span>
+          <label id="select_hitsound" class="button" for="hitsound" s-i18n="settings.select"></label>
+          <span id="clear_hitsound" class="button" s-i18n="settings.clear"></span>
         </span>
       </div>
       <div id="dark_mode"></div>
+      <div id="language"></div>
       <div class="setting_item">
-        <span>重置全部设置：</span>
-        <span id="reset_all" class="button">重置</span>
+        <span s-i18n="settings.reset_all"></span>
+        <span id="reset_all" class="button" s-i18n="settings.reset"></span>
       </div>
     </div>
   </div>
+
   <input type="radio" name="touchpoint" id="tp_2" class="hide_cover" checked />
   <label for="tp_2" class="box_cover"></label>
   <input type="radio" name="touchpoint" id="tp_1" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
-      <label for="tp_1">触点样式</label>
+      <label for="tp_1" s-i18n="settings.touchpoint.style"></label>
       <label for="tp_2" class="close_box fas fa-times"></label>
     </div>
     <div class="box">
@@ -152,18 +155,19 @@
       <div id="touchpoint_alpha"></div>
       <div id="touchpoint_scale"></div>
       <div class="setting_item">
-        <span>重置触点样式：</span>
-        <span id="touchpoint_reset" class="button">重置</span>
+        <span s-i18n="settings.touchpoint.reset"></span>
+        <span id="touchpoint_reset" class="button" s-i18n="settings.reset"></span>
       </div>
     </div>
   </div>
   <input type="radio" name="tabs" id="tab_2" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
-      <label for="tab_2">FAQ</label>
+      <label for="tab_2" s-i18n="ui.faq"></label>
       <label for="tab_5" class="close_box fas fa-times"></label>
     </div>
     <div class="box">
+      <p class="tips_en"><br />(It's difficult for me to translate them into English...)</p>
       <p><strong>Q：全屏时划动屏幕会触发亮度/音量调整？<br />Q：视频可以加载播放但是没有画面？</strong><br /><strong>Q：视频播放卡顿？</strong></p>
       <p>A：可以尝试切换视频播放模式。如果仍然无法解决，请更换浏览器。</p>
       <p><strong>Q：视频无法加载？</strong></p>
@@ -181,10 +185,13 @@
   <input type="radio" name="tabs" id="tab_3" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
-      <label for="tab_3">更新日志</label>
+      <label for="tab_3" s-i18n="ui.updates"></label>
       <label for="tab_5" class="close_box fas fa-times"></label>
     </div>
     <div class="box">
+      <p class="tips_en"><br />(It's difficult for me to translate them into English...)</p>
+      <h2 class="ul">1.4.5</h2>
+      <p>1.加入了多语言支持（目前可选中/英）。</p>
       <h2 class="ul">1.4.1</h2>
       <p>1.支持自定义触点样式；</p>
       <p>2.更新了倍速调整功能的操作逻辑；</p>
@@ -221,17 +228,17 @@
   <input type="radio" name="tabs" id="tab_4" class="show_dialogs" />
   <div class="box_container">
     <div class="tab">
-      <label for="tab_4">关于</label>
+      <label for="tab_4" s-i18n="ui.about"></label>
       <label for="tab_5" class="close_box fas fa-times"></label>
     </div>
-    <div class="box">
+    <div class="box hidden_2" id="about_zh">
       <h2 class="ul">音乐游戏培训</h2>
       <p>设计灵感来源于苹果设备上的<a href="https://apps.apple.com/cn/app/id1088874473" target="_blank">音乐游戏培训</a>，目的是让苹果设备以外的音游玩家也能用到类似的软件。</p>
       <p>选择一个音游录屏或手元视频即可开始使用。</p>
       <hr />
       <p>版本：<span class="version"></span></p>
       <p>作者：StarSky919</p>
-      <p>网址：<a href="https://rgtraining.starsky919.xyz/" target="_blank"></a></p>
+      <p>网址：<a href="https://rgtraining.starsky919.xyz/" target="_blank">https://rgtraining.starsky919.xyz/</a></p>
       <p>项目地址：<a href="https://github.com/StarSky919/rgtraining" target="_blank">StarSky919/rgtraining</a>（GitHub）</p>
       <p>推荐使用Via和Firefox浏览器。</p>
       <p>不同设备与浏览器平台的兼容性有待测试，可以加群讨论（下方链接直达）。</p>
@@ -242,17 +249,45 @@
       <p>欢迎各位来群里反馈问题或是提出建议～</p>
       <p>如果要加个人QQ请注明来意，没有特殊情况的话一律拒绝。</p>
     </div>
+    <div class="box hidden_2" id="about_en">
+      <h2 class="ul">Rhythm Game Training</h2>
+      <p>Developed for Android players (also myself), inspired by <a href="https://apps.apple.com/app/id1088874473" target="_blank">Sound Game Training</a>.</p>
+      <p>Select a video file to start!</p>
+      <hr />
+      <h3>App Info</h3>
+      <p>Version: <span class="version"></span></p>
+      <p>Author: StarSky919</p>
+      <p>URL: <a href="https://rgtraining.starsky919.xyz/" target="_blank">https://rgtraining.starsky919.xyz/</a></p>
+      <p>GitHub Repo: <a href="https://github.com/StarSky919/rgtraining" target="_blank">StarSky919/rgtraining</a></p>
+      <p>Recommend to use Chrome, Via and Firefox browser.</p>
+      <hr />
+      <h3>Translators</h3>
+      <p>English: StarSky919</p>
+      <p>Help us in translation ↓ ↓ ↓</p>
+      <hr />
+      <h3>Contact</h3>
+      <p>Discord: starsky919✩#8982</p>
+      <p>Twitter: <a href="https://mobile.twitter.com/StarSky919" target="_blank">@StarSky919</a></p>
+      <p>Email: <a href="mailto:ss919p@gmail.com" target="_blank">ss919p@gmail.com</a></p>
+      <p>If you have any question or suggestion, please tell me. I'll do my best~</p>
+    </div>
   </div>
-  <script src="index.js" type="text/javascript"></script>
-  <script src="app.js" type="text/javascript"></script>
+  <script src="assets/js/fly.min.js"></script>
+  <script src="assets/js/index.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/app.js"></script>
   <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(hm, s);
-    })();
+    document.addEventListener('readystatechange', event => {
+      if (document.readyState === 'complete') {
+        var _hmt = _hmt || [];
+        (function() {
+          var hm = document.createElement("script");
+          hm.src = "https://hm.baidu.com/hm.js?03b310a380b987c2fd08eab11b3ae207";
+          var s = document.getElementsByTagName("script")[0];
+          s.parentNode.insertBefore(hm, s);
+        })();
+      }
+    });
   </script>
 
 </body>
