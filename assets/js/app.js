@@ -417,6 +417,7 @@ document.addEventListener('readystatechange', event => {
 
   const startCapture = () => {
     if (video.paused) return;
+    current.innerText = Time.formatTimeFloat(video.currentTime);
     if (!settings.get('play_mode')) drawFrame();
     requestAnimationFrame(startCapture);
   }
@@ -946,7 +947,7 @@ document.addEventListener('readystatechange', event => {
       }
     }
     if (!slidingProgress) progress.value = Math.floor(1000 * (video.currentTime / video.duration)) || 0;
-    current.innerText = Time.formatTimeFloat(video.currentTime);
+    //current.innerText = Time.formatTimeFloat(video.currentTime);
     drawFrame();
   });
 
